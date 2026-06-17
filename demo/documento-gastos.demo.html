@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LogiCosto — Demo Documento de Gastos</title>
+<style>
+  body{margin:0;background:#f3f3f3;font-family:Calibri,"Segoe UI",Arial,sans-serif;}
+  .barra-demo{
+    background:#1F4E78;color:#fff;padding:10px 16px;display:flex;gap:10px;
+    align-items:center;flex-wrap:wrap;
+  }
+  .barra-demo strong{font-size:15px;}
+  .barra-demo button{
+    background:#fff;color:#1F4E78;border:0;border-radius:4px;padding:6px 14px;
+    font-weight:bold;cursor:pointer;font-size:13px;
+  }
+  .barra-demo span{opacity:.85;font-size:12px;}
+  #salida{padding:24px 0;}
+  @media print{ .barra-demo{display:none;} #salida{padding:0;} body{background:#fff;} }
+</style>
+</head>
+<body>
+  <div class="barra-demo">
+    <strong>LogiCosto</strong>
+    <span>Demo del componente — datos de la imagen de referencia</span>
+    <button onclick="window.print()">Imprimir / Guardar como PDF</button>
+  </div>
+  <div id="salida"></div>
+
+  <script type="module">
+    import { renderDocumentoGastos } from '../src/documento-gastos.js';
+
+    // Datos idénticos al Excel de referencia (Toyota Highlander).
+    const datos = {
+      emision: '26/05/2026',
+      pagina: 1,
+      totalPaginas: 1,
+      importador: { nombre: 'JUNIOR A & S AUTO SRL', rnc: '132656776' },
+      vehiculo: {
+        descripcion: 'TOYOTA HIGHLANDER SERIE HYBRID LIMITED BLANCA 2500CC AWD 2022 5TDXBRCH0NS557624',
+      },
+      vencimiento: '19/5/2026',
+      gastos: [
+        { concepto: 'Impuestos',          monto: 188771.25 },
+        { concepto: 'Servicios Aduanales', monto: 10000 },
+        { concepto: 'Parqueo',            monto: 13260 },
+        { concepto: 'Honorarios',         monto: 10000 },
+        { concepto: 'Factura',            monto: 500 },
+        { concepto: 'Registración',       monto: 1000 },
+        { concepto: 'Dealer',             monto: 20500 },
+        { concepto: 'Otros Gastos',       monto: 70000 },
+      ],
+      nota: 'NOTA: FAVOR DE REVISAR SU VEHICULO EN EL PRINTER ANTES DE REALIZAR EL PAGO YA QUE NO NOS HACEMOS RESPONSABLE DE CAMBIOS FUTUROS',
+    };
+
+    document.getElementById('salida').innerHTML = renderDocumentoGastos(datos);
+  </script>
+</body>
+</html>

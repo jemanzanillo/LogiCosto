@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LogiCosto — Print test</title>
+<style>body{margin:0;background:#fff;}</style>
+</head>
+<body>
+  <div id="salida"></div>
+  <script type="module">
+    import { renderDocumentoGastos } from '../src/documento-gastos.js';
+
+    const params = new URLSearchParams(location.search);
+    const n = Math.max(0, parseInt(params.get('n') || '8', 10));
+    // Logo de prueba (SVG en data URI) para validar el espacio reservado.
+    const logoDemo = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="60">' +
+      '<rect width="200" height="60" rx="6" fill="#1F4E78"/>' +
+      '<text x="100" y="38" font-family="Arial" font-size="22" fill="#fff" ' +
+      'text-anchor="middle" font-weight="bold">GESTORA</text></svg>');
+    const logoUrl = params.get('logo') === '1' ? logoDemo : '';
+
+    const conceptosBase = [
+      'Impuestos', 'Servicios Aduanales', 'Parqueo', 'Honorarios',
+      'Factura', 'Registración', 'Dealer', 'Otros Gastos',
+    ];
+    const gastos = [];
+    for (let i = 0; i < n; i++) {
+      gastos.push({
+        concepto: conceptosBase[i % conceptosBase.length] + (i >= conceptosBase.length ? ' ' + (i + 1) : ''),
+        monto: 1000 + (i * 137.5),
+      });
+    }
+
+    const datos = {
+      emision: '26/05/2026',
+      pagina: 1,
+      totalPaginas: 1,
+      logoUrl,
+      empresa: { nombre: 'Gestora Demo' },
+      importador: { nombre: 'JUNIOR A & S AUTO SRL', rnc: '132656776' },
+      vehiculo: { descripcion: 'TOYOTA HIGHLANDER SERIE HYBRID LIMITED BLANCA 2500CC AWD 2022 5TDXBRCH0NS557624' },
+      vencimiento: '19/5/2026',
+      gastos,
+      nota: 'NOTA: FAVOR DE REVISAR SU VEHICULO EN EL PRINTER ANTES DE REALIZAR EL PAGO YA QUE NO NOS HACEMOS RESPONSABLE DE CAMBIOS FUTUROS',
+    };
+
+    document.getElementById('salida').innerHTML = renderDocumentoGastos(datos);
+    document.title = 'print-test n=' + n;
+    window.__listo = true;
+  </script>
+</body>
+</html>

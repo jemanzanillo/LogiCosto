@@ -1,0 +1,9 @@
+# Dependencias
+node_modules/
+
+# Artefactos de prueba / salida de PDFs
+out/
+
+# Sistema
+Thumbs.db
+.DS_Store
