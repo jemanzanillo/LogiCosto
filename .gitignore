@@ -7,3 +7,17 @@ out/
 # Sistema
 Thumbs.db
 .DS_Store
+
+# MCP config (contains secrets)
+.mcp.json
+
+# Variables de entorno (contienen secretos)
+.env.local
+.env*.local
+
+# Next.js
+.next/
+out/
+
+# Vercel
+.vercel

@@ -241,7 +241,14 @@ para ambos tipos.
   no se almacena el archivo. Por eso un cambio de diseño se propaga también a
   las facturas históricas (que se importan **solo con sus datos**).
 - Estados del documento: `borrador` → `exportada` → `finalizada` (la última
-  versión es la que queda como factura finalizada).
+  versión es la que queda como factura finalizada). En la interfaz (panel e
+  historial) se muestran con estas etiquetas:
+  - **Borrador** ← `borrador` (aún en edición, sin exportar).
+  - **Pendiente** ← `exportada` (enviada al importador, a la espera de pago).
+  - **Aprobada** ← `finalizada` (pagada/cerrada; versión final).
+  - **Vencida** ← `exportada` cuya fecha de vencimiento de parqueo ya pasó
+    (`hoy > vencimiento`). Es una **condición derivada** de `exportada`, no un
+    cuarto estado del ciclo.
 - El historial conserva, como mínimo: fecha de generación, tipo, importador,
   RNC, datos del vehículo o del contenedor según tipo, fecha de vencimiento,
   lista de conceptos y montos, total, versión y estado.
