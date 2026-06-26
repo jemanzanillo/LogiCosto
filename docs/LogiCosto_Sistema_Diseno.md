@@ -325,7 +325,7 @@ Lucide, fill en `whatsapp`. Dos tokens nuevos en la colección `Tokens`:
 
 - [ ] Exportar SVG del isotipo **LC** en sus variantes (light, dark, solo placa, lockup horizontal) — hoy vive aplanado como imagen en Figma (`125:90`)
 - [ ] Confirmar si Outfit se usará también en los documentos PDF o solo en la interfaz
-- [ ] Definir tokens de color en `tailwind.config.ts` extendiendo la paleta base — **nota:** el config actual aún tiene placeholders de la Fase 0 (`brand.primary #1A237E`, `brand.accent #FFD600`) que NO corresponden a la paleta del sistema (`#1A2B4A` / `#2E7CF6`)
+- [x] ~~Definir tokens de color en `tailwind.config.ts` extendiendo la paleta base~~ — hecho el 2026-06-25. Se reemplazaron los placeholders de Fase 0 por la paleta real: escalas `brand.marino` / `brand.electrico` / `brand.ambar` (nombres alineados con las Figma Variables, p.ej. `bg-brand-marino-800` ↔ `var(--brand-marino-800)`), más `status.*` (borrador/pendiente/aprobado/vencida) y `category.*` (vehiculo/contenedor). Los alias `brand.primary` (→ marino-800) y `brand.accent` (→ electrico-600) se conservan para no romper las clases en uso (`bg-brand-primary`, etc.). Verificado: login compila y `bg-brand-primary` resuelve a `#1A2B4A`.
 - [ ] Migrar la escala G0–G5 a Figma Variables y completar la capa de tokens (§5)
 - [x] ~~Insertar el set Lucide como componentes en Figma e integrar el SVG de WhatsApp~~ — hecho el 2026-06-25 (48 componentes en sección "Iconos", §7)
 - [ ] Colorizar el Panel de inicio (§6): mapear pills de estado a §4 y reemplazar grises por la paleta de marca
