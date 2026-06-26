@@ -21,3 +21,7 @@ out/
 
 # Vercel
 .vercel
+
+# TypeScript build cache
+tsconfig.tsbuildinfo
+*.tsbuildinfo
