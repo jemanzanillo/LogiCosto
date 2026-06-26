@@ -17,7 +17,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="relative z-10 flex flex-col items-center gap-4">
           <Image
-            src="/logo.webp"
+            src="/lm-aduanas-logo.png"
             alt="LM Aduanas"
             width={96}
             height={96}

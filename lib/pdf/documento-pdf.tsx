@@ -268,6 +268,7 @@ export default function DocumentoPDF({
         {/* Encabezado */}
         <View style={styles.hd}>
           <View style={styles.brandlock}>
+            {/* eslint-disable-next-line jsx-a11y/alt-text -- Image de react-pdf no acepta alt */}
             {logoBase64 ? <Image style={styles.logo} src={`data:image/png;base64,${logoBase64}`} /> : null}
             <View style={styles.brandTextWrap}>
               <Text style={styles.brandNombre}>{MARCA_GESTORIA.nombre}</Text>
