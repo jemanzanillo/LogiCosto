@@ -12,7 +12,7 @@ export default async function ProtectedLayout({ children }: { children: React.Re
     .from('profiles')
     .select('full_name')
     .eq('id', user.id)
-    .single()
+    .single() as unknown as { data: { full_name: string } | null, error: unknown }
 
   return (
     <div className="min-h-screen flex flex-col">
