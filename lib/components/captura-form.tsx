@@ -1,16 +1,14 @@
 'use client'
 
-import { useMemo, useState, useTransition } from 'react'
+import { useMemo, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   armarData,
   validar,
   formStateVacio,
   calcularTotal,
-  CONCEPTOS_SUGERIDOS,
   type FormState,
   type DocumentoTipo,
-  type ConceptoLinea,
 } from '@/lib/documentos/types'
 import type { Database } from '@/lib/types/database.types'
 import { formatoMoneda } from '@/lib/pdf/formato'
@@ -39,6 +37,12 @@ export default function CapturaForm({ initialId, initialStatus, initialForm }: P
   const [mensaje, setMensaje] = useState<string | null>(null)
   const [pendingExportar, startExportar] = useTransition()
 
+  // Estado local del campo de entrada de conceptos
+  const [nuevoConcepto, setNuevoConcepto] = useState('')
+  const [nuevoMonto, setNuevoMonto] = useState('')
+  const [errorEntrada, setErrorEntrada] = useState<string | null>(null)
+  const refConcepto = useRef<HTMLInputElement>(null)
+
   const data = useMemo(() => armarData(form), [form])
   const total = calcularTotal(form.conceptos)
 
@@ -58,22 +62,19 @@ export default function CapturaForm({ initialId, initialStatus, initialForm }: P
   function setVencimiento(valor: string) {
     setForm((f) => ({ ...f, vencimiento_parqueo: valor }))
   }
-  function setConcepto(i: number, campo: keyof ConceptoLinea, valor: string) {
-    setForm((f) => {
-      const conceptos = f.conceptos.map((c, idx) =>
-        idx === i ? { ...c, [campo]: campo === 'monto' ? Number(valor) || 0 : valor } : c
-      )
-      return { ...f, conceptos }
-    })
-  }
-  function agregarConcepto() {
-    setForm((f) => ({ ...f, conceptos: [...f.conceptos, { concepto: '', monto: 0 }] }))
+  function handleAgregarConcepto() {
+    const nombre = nuevoConcepto.trim()
+    const monto = Number(nuevoMonto.replace(',', '.')) || 0
+    if (!nombre) { setErrorEntrada('Escribe el nombre del concepto.'); return }
+    if (monto <= 0) { setErrorEntrada('El monto debe ser mayor a 0.'); return }
+    setErrorEntrada(null)
+    setForm((f) => ({ ...f, conceptos: [...f.conceptos, { concepto: nombre, monto }] }))
+    setNuevoConcepto('')
+    setNuevoMonto('')
+    refConcepto.current?.focus()
   }
   function eliminarConcepto(i: number) {
-    setForm((f) => ({
-      ...f,
-      conceptos: f.conceptos.length > 1 ? f.conceptos.filter((_, idx) => idx !== i) : f.conceptos,
-    }))
+    setForm((f) => ({ ...f, conceptos: f.conceptos.filter((_, idx) => idx !== i) }))
   }
 
   // ---- acciones ----
@@ -226,49 +227,71 @@ export default function CapturaForm({ initialId, initialStatus, initialForm }: P
         </div>
 
         {/* Conceptos */}
-        <fieldset className="space-y-2">
-          <div className="flex items-center justify-between">
-            <legend className="text-sm font-semibold text-gray-700">Conceptos</legend>
-            <button type="button" onClick={agregarConcepto} className="text-xs font-medium text-brand-primary hover:underline">
-              + Agregar concepto
-            </button>
-          </div>
-          <datalist id="conceptos-sugeridos">
-            {CONCEPTOS_SUGERIDOS.map((c) => (
-              <option key={c} value={c} />
-            ))}
-          </datalist>
-          {form.conceptos.map((c, i) => (
-            <div key={i} className="flex items-start gap-2">
+        <fieldset className="space-y-3">
+          <legend className="text-sm font-semibold text-gray-700">Conceptos</legend>
+
+          {/* Entrada */}
+          <div className="space-y-1">
+            <div className="flex gap-2">
               <input
-                className={inputCls + ' flex-1'}
-                list="conceptos-sugeridos"
-                placeholder="Concepto"
-                value={c.concepto}
-                onChange={(e) => setConcepto(i, 'concepto', e.target.value)}
+                ref={refConcepto}
+                className={inputCls + ' flex-1 min-w-0'}
+                placeholder="Nombre del concepto"
+                value={nuevoConcepto}
+                onChange={(e) => { setNuevoConcepto(e.target.value); setErrorEntrada(null) }}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAgregarConcepto() } }}
               />
               <input
-                className={inputCls + ' w-32'}
+                className={inputCls + ' w-28'}
                 inputMode="decimal"
-                placeholder="0.00"
-                value={c.monto || ''}
-                onChange={(e) => setConcepto(i, 'monto', e.target.value)}
+                placeholder="Monto"
+                value={nuevoMonto}
+                onChange={(e) => { setNuevoMonto(e.target.value); setErrorEntrada(null) }}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAgregarConcepto() } }}
               />
               <button
                 type="button"
-                onClick={() => eliminarConcepto(i)}
-                disabled={form.conceptos.length === 1}
-                className="rounded-lg border border-gray-300 px-2.5 py-2 text-sm text-gray-500 hover:bg-gray-50 disabled:opacity-40"
-                aria-label="Eliminar concepto"
+                onClick={handleAgregarConcepto}
+                className="rounded-lg bg-brand-primary px-3 py-2 text-sm font-semibold text-white hover:bg-brand-marino-900 whitespace-nowrap"
               >
-                ✕
+                + Agregar
               </button>
             </div>
-          ))}
-          {err('conceptos') && <p className="text-xs text-red-600">{err('conceptos')}</p>}
-          <div className="flex justify-end pt-1 text-sm font-semibold text-gray-800">
-            Total: {formatoMoneda(total)}
+            {errorEntrada && <p className="text-xs text-red-600">{errorEntrada}</p>}
           </div>
+
+          {/* Lista de conceptos agregados */}
+          {form.conceptos.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-gray-200 py-4 text-center text-sm text-gray-400">
+              Aún no hay conceptos. Agrega el primero.
+            </p>
+          ) : (
+            <ul className="overflow-hidden rounded-lg border border-gray-200 divide-y divide-gray-100">
+              {form.conceptos.map((c, i) => (
+                <li key={i} className="flex items-center gap-3 bg-white px-3 py-2.5">
+                  <span className="flex-1 text-sm text-gray-800">{c.concepto}</span>
+                  <span className="tabular-nums text-sm font-medium text-gray-700">
+                    {formatoMoneda(c.monto)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => eliminarConcepto(i)}
+                    className="text-gray-400 hover:text-red-500 transition-colors"
+                    aria-label={`Eliminar ${c.concepto}`}
+                  >
+                    ✕
+                  </button>
+                </li>
+              ))}
+              <li className="flex justify-end bg-gray-50 px-3 py-2">
+                <span className="text-sm font-semibold text-gray-800">
+                  Total: {formatoMoneda(total)}
+                </span>
+              </li>
+            </ul>
+          )}
+
+          {err('conceptos') && <p className="text-xs text-red-600">{err('conceptos')}</p>}
         </fieldset>
 
         {/* Acciones */}

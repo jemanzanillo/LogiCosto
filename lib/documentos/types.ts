@@ -82,7 +82,7 @@ export function formStateVacio(): FormState {
     vehiculo: vehiculoVacio(),
     contenedor: contenedorVacio(),
     vencimiento_parqueo: '',
-    conceptos: [{ concepto: '', monto: 0 }],
+    conceptos: [],
   }
 }
 
@@ -149,11 +149,8 @@ export function validar(form: FormState): ErroresValidacion {
       errores['contenedor.numero_contenedor'] = 'Número de contenedor obligatorio.'
   }
 
-  const conceptosValidos = form.conceptos.filter(
-    (c) => c.concepto.trim() && Number(c.monto) > 0
-  )
-  if (conceptosValidos.length === 0) {
-    errores['conceptos'] = 'Agrega al menos un concepto con monto mayor a 0.'
+  if (form.conceptos.length === 0) {
+    errores['conceptos'] = 'Agrega al menos un concepto.'
   }
 
   return errores
