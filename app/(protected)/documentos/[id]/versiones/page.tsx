@@ -71,20 +71,20 @@ export default async function VersionesPage({
   return (
     <div className="flex flex-col gap-5">
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-1.5 text-sm text-gray-400">
-        <Link href="/dashboard" className="hover:text-gray-600">Inicio</Link>
+      <nav className="flex items-center gap-1.5 text-sm text-text-tertiary">
+        <Link href="/dashboard" className="hover:text-text-secondary">Inicio</Link>
         <span>/</span>
-        <Link href="/historial" className="hover:text-gray-600">Historial</Link>
+        <Link href="/historial" className="hover:text-text-secondary">Historial</Link>
         <span>/</span>
-        <span className="text-gray-500">{doc.importador_nombre}</span>
+        <span className="text-text-secondary">{doc.importador_nombre}</span>
         <span>/</span>
-        <span className="text-gray-700">Versiones</span>
+        <span className="text-text-secondary">Versiones</span>
       </nav>
 
       {/* Encabezado */}
       <div>
-        <h1 className="text-xl font-semibold text-gray-900">Versiones</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-xl font-semibold text-text-primary">Versiones</h1>
+        <p className="mt-1 text-sm text-text-secondary">
           {doc.importador_nombre} · {doc.tipo === 'vehiculo' ? 'Vehículo' : 'Contenedor'}
           {identificador ? ` · ${doc.tipo === 'vehiculo' ? 'Chasis' : 'BL'} ${identificador}` : ''}
         </p>
@@ -92,7 +92,7 @@ export default async function VersionesPage({
 
       {/* Legend del ciclo */}
       <div className="flex items-center gap-2 text-sm">
-        <span className="text-gray-400">Ciclo:</span>
+        <span className="text-text-tertiary">Ciclo:</span>
         {CICLO.map((paso, i) => (
           <span key={paso} className="flex items-center gap-2">
             <span
@@ -100,7 +100,7 @@ export default async function VersionesPage({
                 'inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ' +
                 (paso === cicloActivo
                   ? ESTADO_CLASE[paso]
-                  : 'bg-gray-100 text-gray-400')
+                  : 'bg-surface-sunken text-text-tertiary')
               }
             >
               {ESTADO_LABEL[paso]}

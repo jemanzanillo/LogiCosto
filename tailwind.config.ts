@@ -59,6 +59,19 @@ const config: Config = {
           vehiculo: { bg: '#E6F0FE', text: '#1A5CC4', dot: '#2E7CF6' },
           contenedor: { bg: '#FEF5E6', text: '#A05E05', dot: '#F5A623' },
         },
+        // Tokens semánticos del hi-fi (verificados con get_variable_defs de
+        // la página HiFi, frame Panel de inicio 150:2976). Neutrales fríos (slate).
+        surface: { page: '#F4F6FA', raised: '#FFFFFF', sunken: '#EEF2F8', hover: '#F1F5F9' },
+        border: { DEFAULT: '#E2E8F0', strong: '#CBD5E1' },
+        text: { primary: '#1A2B4A', secondary: '#4E6F96', tertiary: '#94A3B8', 'on-accent': '#FFFFFF' },
+        table: { header: '#F1F5F9', zebra: '#F8FAFC' },
+        action: { primary: '#2E7CF6', 'primary-hover': '#1A5CC4' },
+      },
+      fontFamily: {
+        // Inter = cuerpo/datos densos (cara por defecto). Outfit = estructura/jerarquía.
+        sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
+        body: ['var(--font-inter)', 'system-ui', 'sans-serif'],
+        display: ['var(--font-outfit)', 'var(--font-inter)', 'system-ui', 'sans-serif'],
       },
     },
   },

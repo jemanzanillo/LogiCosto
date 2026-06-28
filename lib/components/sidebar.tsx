@@ -16,23 +16,31 @@ export default async function Sidebar() {
         .single()
     : { data: null }
 
-  return (
-    <aside className="w-[237px] shrink-0 flex flex-col bg-brand-marino-800 overflow-hidden">
-      {/* Logo */}
-      <div className="h-14 flex items-center px-5 border-b border-white/10 shrink-0">
-        <span className="font-bold tracking-wide text-sm text-white">LogiCosto</span>
-      </div>
+  const nombre = profile?.full_name ?? user?.email ?? ''
 
-      {/* Nav */}
+  return (
+    <aside className="w-[248px] shrink-0 flex flex-col bg-surface-raised border-r border-border overflow-hidden">
+      {/* Nav (el logo vive en la cabecera superior) */}
       <NavLinks />
 
-      {/* Footer: perfil + salir */}
-      <div className="shrink-0 border-t border-white/10 px-4 py-4">
-        <div className="text-[11px] text-white/40 capitalize">
-          {profile?.role ?? 'operador'}
-        </div>
-        <div className="text-sm font-medium text-white truncate mb-2">
-          {profile?.full_name ?? user?.email ?? ''}
+      {/* Pie: tarjeta de usuario + cerrar sesión */}
+      <div className="shrink-0 border-t border-border px-4 py-4">
+        <div className="flex items-center gap-2.5 mb-3">
+          {/* Logo del gestor/tenant actual (LM Aduanas) como imagen del usuario. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/lm-aduanas-logo.png"
+            alt="LM Aduanas"
+            className="h-9 w-auto shrink-0 object-contain"
+          />
+          <div className="min-w-0">
+            <div className="font-display text-sm font-medium text-text-primary truncate">
+              {nombre}
+            </div>
+            <div className="text-[11px] text-text-secondary capitalize truncate">
+              {profile?.role ?? 'operador'}
+            </div>
+          </div>
         </div>
         <LogoutButton />
       </div>

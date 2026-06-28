@@ -4,8 +4,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useTransition } from 'react'
 
 const selectCls =
-  'rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 ' +
-  'focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary'
+  'rounded-lg border border-border bg-surface-raised px-3 py-1.5 text-sm font-display text-text-secondary ' +
+  'focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary'
 
 export default function FiltrosHistorial() {
   const router = useRouter()
@@ -91,7 +91,7 @@ export default function FiltrosHistorial() {
         aria-label="Desde"
         title="Desde"
       />
-      <span className="text-gray-400 text-xs">–</span>
+      <span className="text-text-tertiary text-xs">–</span>
       <input
         type="date"
         value={hasta}
@@ -105,7 +105,7 @@ export default function FiltrosHistorial() {
       {hayFiltros && (
         <button
           onClick={limpiar}
-          className="text-sm text-brand-electrico-600 hover:underline whitespace-nowrap"
+          className="text-sm font-display font-medium text-action-primary hover:underline whitespace-nowrap"
         >
           Limpiar filtros
         </button>

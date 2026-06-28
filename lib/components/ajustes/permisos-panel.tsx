@@ -59,15 +59,15 @@ export default function PermisosPanel({ permisos, serviceRoleConfigurado, esTitu
   return (
     <section className="space-y-4">
       <div>
-        <h2 className="text-base font-semibold text-gray-900">Permisos por rol</h2>
-        <p className="text-sm text-gray-500">
+        <h2 className="text-base font-semibold text-text-primary">Permisos por rol</h2>
+        <p className="text-sm text-text-secondary">
           Define qué puede hacer cada rol. El <span className="font-medium">titular</span> siempre
           tiene acceso total y es el único que administra estos permisos.
         </p>
       </div>
 
       {!esTitular && (
-        <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+        <div className="rounded-lg border border-border bg-surface-hover px-4 py-3 text-sm text-text-secondary">
           Solo el <span className="font-medium">titular</span> puede modificar los permisos. Esta
           vista es de solo lectura.
         </div>
@@ -82,10 +82,10 @@ export default function PermisosPanel({ permisos, serviceRoleConfigurado, esTitu
 
       {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
-      <div className="overflow-x-auto rounded-xl border border-gray-100 bg-white">
+      <div className="overflow-x-auto rounded-xl border border-border bg-white">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-100 bg-gray-50 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+            <tr className="border-b border-border bg-surface-hover text-left text-xs font-semibold uppercase tracking-wider text-text-secondary">
               <th className="px-4 py-3">Acción</th>
               <th className="px-4 py-3 text-center">Titular</th>
               {ROLES_CONFIGURABLES.map((r) => (
@@ -112,7 +112,7 @@ export default function PermisosPanel({ permisos, serviceRoleConfigurado, esTitu
         </table>
       </div>
 
-      <p className="text-xs text-gray-400">
+      <p className="text-xs text-text-tertiary">
         Las acciones marcadas como <span className="font-medium">Próximamente</span> se activarán
         cuando se implemente su módulo.
       </p>
@@ -139,10 +139,10 @@ function GrupoFilas({
 }) {
   return (
     <>
-      <tr className="bg-gray-50/60">
+      <tr className="bg-surface-hover/60">
         <td
           colSpan={2 + ROLES_CONFIGURABLES.length}
-          className="px-4 py-2 text-[10px] font-semibold uppercase tracking-widest text-gray-400"
+          className="px-4 py-2 text-[10px] font-semibold uppercase tracking-widest text-text-tertiary"
         >
           {grupo}
         </td>
@@ -151,14 +151,14 @@ function GrupoFilas({
         <tr key={a.key} className="bg-white">
           <td className="px-4 py-3">
             <div className="flex items-center gap-2">
-              <span className="font-medium text-gray-900">{a.label}</span>
+              <span className="font-medium text-text-primary">{a.label}</span>
               {!a.disponible && (
-                <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-500">
+                <span className="rounded-full bg-surface-sunken px-2 py-0.5 text-[10px] font-medium text-text-secondary">
                   Próximamente
                 </span>
               )}
             </div>
-            <p className="mt-0.5 text-xs text-gray-500">{a.descripcion}</p>
+            <p className="mt-0.5 text-xs text-text-secondary">{a.descripcion}</p>
           </td>
           {/* Titular: siempre todo, bloqueado */}
           <td className="px-4 py-3 text-center">

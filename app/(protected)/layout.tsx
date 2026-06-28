@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import Sidebar from '@/lib/components/sidebar'
+import Header from '@/lib/components/header'
 
 export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -11,15 +12,11 @@ export default async function ProtectedLayout({ children }: { children: React.Re
   if (!user) redirect('/login')
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-14 shrink-0 flex items-center justify-end px-6 bg-white border-b border-gray-100">
-          <div className="h-8 w-8 rounded-full bg-brand-marino-200 flex items-center justify-center text-brand-marino-800 text-xs font-semibold">
-            {/* Avatar placeholder */}
-          </div>
-        </header>
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+    <div className="flex h-screen flex-col overflow-hidden bg-surface-page">
+      <Header />
+      <div className="flex flex-1 min-h-0">
+        <Sidebar />
+        <main className="flex-1 overflow-y-auto px-8 py-6">{children}</main>
       </div>
     </div>
   )

@@ -1,10 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { Car, Container } from 'lucide-react'
 import { formatoMoneda } from '@/lib/pdf/formato'
 import PanelDetalle from './panel-detalle'
+import AccionesDocumento from './acciones-documento'
 import {
   estadoUI,
   ESTADO_LABEL,
@@ -47,7 +48,7 @@ export default function TablaHistorial({ filas, total, page, pageSize, permisos 
 
   if (filas.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-gray-200 bg-white py-16 text-center text-sm text-gray-400">
+      <div className="rounded-xl border border-dashed border-border bg-surface-raised py-16 text-center text-sm text-text-tertiary">
         No hay documentos con los filtros seleccionados.
       </div>
     )
@@ -57,10 +58,10 @@ export default function TablaHistorial({ filas, total, page, pageSize, permisos 
     <div className="flex gap-0 min-h-0">
       {/* Tabla */}
       <div className="flex-1 flex flex-col min-w-0">
-        <div className="overflow-x-auto rounded-xl border border-gray-100 bg-white">
+        <div className="overflow-x-auto rounded-xl border border-border bg-surface-raised">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 bg-gray-50 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              <tr className="border-b border-border bg-table-header text-left text-xs font-display font-semibold text-text-secondary uppercase tracking-wider">
                 <th className="px-4 py-3">Importador</th>
                 <th className="px-4 py-3">Tipo</th>
                 <th className="px-4 py-3">Identificador</th>
@@ -89,31 +90,26 @@ export default function TablaHistorial({ filas, total, page, pageSize, permisos 
                     className={
                       'cursor-pointer transition-colors ' +
                       (activo
-                        ? 'bg-brand-electrico-50/30 border-l-2 border-l-brand-electrico-400'
+                        ? 'bg-brand-electrico-50/40 border-l-2 border-l-action-primary'
                         : idx % 2 === 0
-                          ? 'bg-white hover:bg-gray-50'
-                          : 'bg-gray-50/60 hover:bg-gray-50')
+                          ? 'bg-surface-raised hover:bg-surface-hover'
+                          : 'bg-table-zebra hover:bg-surface-hover')
                     }
                   >
-                    <td className="px-4 py-3 font-medium text-gray-900 max-w-[160px] truncate">
+                    <td className="px-4 py-3 font-medium text-text-primary max-w-[160px] truncate">
                       {doc.importador_nombre}
                     </td>
                     <td className="px-4 py-3">
-                      <span
-                        className={
-                          'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ' +
-                          (doc.tipo === 'vehiculo'
-                            ? 'bg-category-vehiculo-bg text-category-vehiculo-text'
-                            : 'bg-category-contenedor-bg text-category-contenedor-text')
-                        }
-                      >
-                        {doc.tipo === 'vehiculo' ? 'Vehículo' : 'Contenedor'}
-                      </span>
+                      {doc.tipo === 'vehiculo' ? (
+                        <Car size={20} className="text-action-primary" aria-label="Vehículo" />
+                      ) : (
+                        <Container size={20} className="text-category-contenedor-dot" aria-label="Contenedor" />
+                      )}
                     </td>
-                    <td className="px-4 py-3 text-gray-600 max-w-[120px] truncate font-mono text-xs">
+                    <td className="px-4 py-3 text-text-secondary max-w-[120px] truncate font-mono text-xs">
                       {identificador || '—'}
                     </td>
-                    <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                    <td className="px-4 py-3 text-text-secondary whitespace-nowrap">
                       {fmt(doc.vencimiento_parqueo)}
                     </td>
                     <td className="px-4 py-3">
@@ -127,28 +123,28 @@ export default function TablaHistorial({ filas, total, page, pageSize, permisos 
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium bg-brand-marino-50 text-brand-marino-800 border border-brand-marino-100">
+                      <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-display font-medium bg-surface-sunken text-text-secondary border border-border">
                         v{doc.version_number}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-gray-500 text-xs">
+                    <td className="px-4 py-3 text-text-tertiary text-xs">
                       {ORIGEN_LABEL[doc.origen]}
                     </td>
-                    <td className="px-4 py-3 text-gray-600 whitespace-nowrap text-xs">
+                    <td className="px-4 py-3 text-text-secondary whitespace-nowrap text-xs">
                       {fmt(doc.updated_at)}
                     </td>
-                    <td className="px-4 py-3 text-right font-medium text-gray-800 whitespace-nowrap tabular-nums">
+                    <td className="px-4 py-3 text-right font-medium text-text-primary whitespace-nowrap tabular-nums">
                       {formatoMoneda(doc.data.total)}
                     </td>
-                    <td className="px-4 py-3">
-                      <Link
-                        href={`/documentos/${doc.id}`}
-                        onClick={(e) => e.stopPropagation()}
-                        className="text-gray-400 hover:text-brand-primary transition-colors text-base leading-none"
-                        aria-label="Abrir documento"
-                      >
-                        ⋯
-                      </Link>
+                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                      <AccionesDocumento
+                        docId={doc.id}
+                        nombre={doc.importador_nombre}
+                        permisos={permisos}
+                        onEliminado={() =>
+                          setSeleccionado((s) => (s?.id === doc.id ? null : s))
+                        }
+                      />
                     </td>
                   </tr>
                 )
@@ -158,7 +154,7 @@ export default function TablaHistorial({ filas, total, page, pageSize, permisos 
         </div>
 
         {/* Paginación */}
-        <div className="flex items-center justify-between pt-3 text-sm text-gray-500">
+        <div className="flex items-center justify-between pt-3 text-sm text-text-secondary">
           <span>
             Mostrando {desde}–{hasta} de {total} documentos
           </span>
@@ -167,7 +163,7 @@ export default function TablaHistorial({ filas, total, page, pageSize, permisos 
               <button
                 onClick={() => irPagina(page - 1)}
                 disabled={page <= 1}
-                className="rounded-lg px-2.5 py-1.5 border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="rounded-lg px-2.5 py-1.5 border border-border text-text-secondary hover:bg-surface-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 ‹
               </button>
@@ -188,10 +184,10 @@ export default function TablaHistorial({ filas, total, page, pageSize, permisos 
                       key={p}
                       onClick={() => irPagina(p as number)}
                       className={
-                        'rounded-lg px-3 py-1.5 border text-sm transition-colors ' +
+                        'rounded-lg px-3 py-1.5 border text-sm font-display transition-colors ' +
                         (p === page
-                          ? 'border-brand-primary bg-brand-primary text-white'
-                          : 'border-gray-200 text-gray-600 hover:bg-gray-50')
+                          ? 'border-action-primary bg-action-primary text-white'
+                          : 'border-border text-text-secondary hover:bg-surface-hover')
                       }
                     >
                       {p}
@@ -201,7 +197,7 @@ export default function TablaHistorial({ filas, total, page, pageSize, permisos 
               <button
                 onClick={() => irPagina(page + 1)}
                 disabled={page >= totalPaginas}
-                className="rounded-lg px-2.5 py-1.5 border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="rounded-lg px-2.5 py-1.5 border border-border text-text-secondary hover:bg-surface-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 ›
               </button>

@@ -2,30 +2,44 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import {
+  LayoutDashboard,
+  FilePlus2,
+  History,
+  Building2,
+  ListChecks,
+  FileSpreadsheet,
+  ShieldCheck,
+  Settings,
+  CircleHelp,
+  type LucideIcon,
+} from 'lucide-react'
 
-const GRUPOS = [
+type Item = { href: string; label: string; icon: LucideIcon }
+
+const GRUPOS: { label: string; items: Item[] }[] = [
   {
     label: 'PRINCIPAL',
     items: [
-      { href: '/dashboard', label: 'Inicio' },
-      { href: '/documentos/nuevo', label: 'Nueva factura' },
-      { href: '/historial', label: 'Historial' },
+      { href: '/dashboard', label: 'Inicio', icon: LayoutDashboard },
+      { href: '/documentos/nuevo', label: 'Nueva factura', icon: FilePlus2 },
+      { href: '/historial', label: 'Historial', icon: History },
     ],
   },
   {
     label: 'GESTIÓN',
     items: [
-      { href: '/importadores', label: 'Importadores' },
-      { href: '/conceptos', label: 'Conceptos frecuentes' },
-      { href: '/respaldo', label: 'Respaldo' },
-      { href: '/auditoria', label: 'Auditoría' },
+      { href: '/importadores', label: 'Importadores', icon: Building2 },
+      { href: '/conceptos', label: 'Conceptos frecuentes', icon: ListChecks },
+      { href: '/respaldo', label: 'Respaldo', icon: FileSpreadsheet },
+      { href: '/auditoria', label: 'Auditoría', icon: ShieldCheck },
     ],
   },
   {
     label: 'SISTEMA',
     items: [
-      { href: '/ajustes', label: 'Ajustes' },
-      { href: '/ayuda', label: 'Ayuda' },
+      { href: '/ajustes', label: 'Ajustes', icon: Settings },
+      { href: '/ayuda', label: 'Ayuda', icon: CircleHelp },
     ],
   },
 ]
@@ -34,14 +48,14 @@ export default function NavLinks() {
   const pathname = usePathname()
 
   return (
-    <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-6">
+    <nav className="flex-1 overflow-y-auto py-5 px-3 space-y-6">
       {GRUPOS.map((grupo) => (
         <div key={grupo.label}>
-          <p className="px-2 mb-1.5 text-[10px] font-semibold tracking-widest text-white/40 uppercase">
+          <p className="px-3 mb-1.5 text-[11px] font-display font-semibold tracking-wider text-text-tertiary">
             {grupo.label}
           </p>
           <ul className="space-y-0.5">
-            {grupo.items.map(({ href, label }) => {
+            {grupo.items.map(({ href, label, icon: Icon }) => {
               // Las páginas de un documento existente (/documentos/[id], .../versiones)
               // cuelgan del Historial; "Nueva factura" solo se activa en /documentos/nuevo.
               const enDocumentoExistente =
@@ -55,17 +69,15 @@ export default function NavLinks() {
                   <Link
                     href={href}
                     className={
-                      'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ' +
+                      'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-display transition-colors ' +
                       (activo
-                        ? 'bg-brand-electrico-50/10 text-white font-medium'
-                        : 'text-white/60 hover:text-white hover:bg-white/5')
+                        ? 'bg-brand-electrico-50 text-brand-electrico-800 font-medium'
+                        : 'text-text-primary/80 hover:bg-surface-hover hover:text-text-primary')
                     }
                   >
-                    <span
-                      className={
-                        'h-1.5 w-1.5 rounded-full shrink-0 ' +
-                        (activo ? 'bg-brand-electrico-400' : 'bg-transparent')
-                      }
+                    <Icon
+                      size={18}
+                      className={'shrink-0 ' + (activo ? 'text-action-primary' : 'text-text-secondary')}
                     />
                     {label}
                   </Link>

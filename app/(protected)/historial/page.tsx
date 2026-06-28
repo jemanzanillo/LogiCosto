@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import Link from 'next/link'
+import { Search, Plus, Upload } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import TablaHistorial from '@/lib/components/historial/tabla-historial'
 import FiltrosHistorial from '@/lib/components/historial/filtros-historial'
@@ -105,20 +106,20 @@ export default async function HistorialPage({ searchParams }: { searchParams: Se
     <div className="flex flex-col gap-4 h-full">
       {/* Encabezado de página */}
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-gray-900">Historial</h1>
+        <h1 className="font-display text-2xl font-semibold text-text-primary">Historial</h1>
         <div className="flex items-center gap-2">
           <Link
             href="/documentos/nuevo"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white hover:bg-brand-marino-900 transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-action-primary px-4 py-2 text-sm font-display font-semibold text-white hover:bg-action-primary-hover transition-colors"
           >
-            + Agregar
+            <Plus size={16} /> Agregar
           </Link>
           <button
             disabled
-            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-500 cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-raised px-4 py-2 text-sm font-display font-medium text-text-tertiary cursor-not-allowed"
             title="Próximamente"
           >
-            Importar
+            <Upload size={16} /> Importar
           </button>
         </div>
       </div>
@@ -148,14 +149,16 @@ export default async function HistorialPage({ searchParams }: { searchParams: Se
 function BusquedaBar({ q }: { q?: string }) {
   return (
     <form action="/historial" method="GET" className="relative">
-      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
       <input
         name="q"
         type="search"
         defaultValue={q}
         placeholder="Buscar factura, importador o chasis…"
-        className="w-full rounded-lg border border-gray-200 bg-white pl-9 pr-4 py-2 text-sm text-gray-700 placeholder-gray-400 focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+        className="w-full rounded-lg border border-border bg-surface-raised pl-4 pr-11 py-2.5 text-sm text-text-primary placeholder-text-tertiary focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
       />
+      <button type="submit" aria-label="Buscar" className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-primary">
+        <Search size={18} />
+      </button>
     </form>
   )
 }

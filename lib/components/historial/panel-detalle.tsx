@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { X } from 'lucide-react'
 import { formatoMoneda } from '@/lib/pdf/formato'
 import { duplicarDocumento, eliminarDocumento } from '@/app/(protected)/documentos/actions'
 import {
@@ -63,11 +64,11 @@ export default function PanelDetalle({ doc, onCerrar, permisos }: Props) {
   }
 
   return (
-    <aside className="w-[380px] shrink-0 flex flex-col bg-white border-l border-gray-100 overflow-y-auto">
+    <aside className="w-[380px] shrink-0 flex flex-col bg-white border-l border-border overflow-y-auto">
       {/* Header */}
-      <div className="flex items-start justify-between px-5 py-4 border-b border-gray-100">
+      <div className="flex items-start justify-between px-5 py-4 border-b border-border">
         <div className="space-y-1.5 min-w-0">
-          <h2 className="text-sm font-semibold text-gray-900 truncate">
+          <h2 className="text-sm font-semibold text-text-primary truncate">
             {doc.importador_nombre}
           </h2>
           <div className="flex flex-wrap gap-1.5">
@@ -96,10 +97,10 @@ export default function PanelDetalle({ doc, onCerrar, permisos }: Props) {
         </div>
         <button
           onClick={onCerrar}
-          className="ml-3 shrink-0 text-gray-400 hover:text-gray-600 transition-colors text-lg leading-none"
+          className="ml-3 shrink-0 text-text-tertiary hover:text-text-primary transition-colors"
           aria-label="Cerrar panel"
         >
-          ✕
+          <X size={18} />
         </button>
       </div>
 
@@ -108,25 +109,25 @@ export default function PanelDetalle({ doc, onCerrar, permisos }: Props) {
         {/* Sección tipo-específica */}
         {doc.tipo === 'vehiculo' && doc.data.vehiculo ? (
           <section>
-            <h3 className="text-[10px] font-semibold tracking-widest text-gray-400 uppercase mb-2">
+            <h3 className="text-[10px] font-semibold tracking-widest text-text-tertiary uppercase mb-2">
               Vehículo
             </h3>
             <dl className="grid grid-cols-2 gap-x-4 gap-y-2">
               <div>
-                <dt className="text-[11px] text-gray-400">Marca</dt>
-                <dd className="font-medium text-gray-800">{doc.data.vehiculo.marca || '—'}</dd>
+                <dt className="text-[11px] text-text-tertiary">Marca</dt>
+                <dd className="font-medium text-text-primary">{doc.data.vehiculo.marca || '—'}</dd>
               </div>
               <div>
-                <dt className="text-[11px] text-gray-400">Modelo</dt>
-                <dd className="font-medium text-gray-800">{doc.data.vehiculo.modelo || '—'}</dd>
+                <dt className="text-[11px] text-text-tertiary">Modelo</dt>
+                <dd className="font-medium text-text-primary">{doc.data.vehiculo.modelo || '—'}</dd>
               </div>
               <div>
-                <dt className="text-[11px] text-gray-400">Año</dt>
-                <dd className="font-medium text-gray-800">{doc.data.vehiculo.anio || '—'}</dd>
+                <dt className="text-[11px] text-text-tertiary">Año</dt>
+                <dd className="font-medium text-text-primary">{doc.data.vehiculo.anio || '—'}</dd>
               </div>
               <div>
-                <dt className="text-[11px] text-gray-400">Chasis</dt>
-                <dd className="font-medium text-gray-800 truncate" title={doc.data.vehiculo.chasis}>
+                <dt className="text-[11px] text-text-tertiary">Chasis</dt>
+                <dd className="font-medium text-text-primary truncate" title={doc.data.vehiculo.chasis}>
                   {doc.data.vehiculo.chasis || '—'}
                 </dd>
               </div>
@@ -134,17 +135,17 @@ export default function PanelDetalle({ doc, onCerrar, permisos }: Props) {
           </section>
         ) : doc.data.contenedor ? (
           <section>
-            <h3 className="text-[10px] font-semibold tracking-widest text-gray-400 uppercase mb-2">
+            <h3 className="text-[10px] font-semibold tracking-widest text-text-tertiary uppercase mb-2">
               Contenedor
             </h3>
             <dl className="grid grid-cols-2 gap-x-4 gap-y-2">
               <div>
-                <dt className="text-[11px] text-gray-400">BL</dt>
-                <dd className="font-medium text-gray-800">{doc.data.contenedor.bl || '—'}</dd>
+                <dt className="text-[11px] text-text-tertiary">BL</dt>
+                <dd className="font-medium text-text-primary">{doc.data.contenedor.bl || '—'}</dd>
               </div>
               <div>
-                <dt className="text-[11px] text-gray-400">Contenedor</dt>
-                <dd className="font-medium text-gray-800 truncate">
+                <dt className="text-[11px] text-text-tertiary">Contenedor</dt>
+                <dd className="font-medium text-text-primary truncate">
                   {doc.data.contenedor.numero_contenedor || '—'}
                 </dd>
               </div>
@@ -154,55 +155,55 @@ export default function PanelDetalle({ doc, onCerrar, permisos }: Props) {
 
         {/* Detalle */}
         <section>
-          <h3 className="text-[10px] font-semibold tracking-widest text-gray-400 uppercase mb-2">
+          <h3 className="text-[10px] font-semibold tracking-widest text-text-tertiary uppercase mb-2">
             Detalle
           </h3>
           <dl className="space-y-2">
             <div className="flex justify-between">
-              <dt className="text-gray-400">Importador</dt>
-              <dd className="font-medium text-gray-800 text-right max-w-[55%] truncate">
+              <dt className="text-text-tertiary">Importador</dt>
+              <dd className="font-medium text-text-primary text-right max-w-[55%] truncate">
                 {doc.importador_nombre}
               </dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-gray-400">RNC</dt>
-              <dd className="font-medium text-gray-800">{doc.importador_rnc || '—'}</dd>
+              <dt className="text-text-tertiary">RNC</dt>
+              <dd className="font-medium text-text-primary">{doc.importador_rnc || '—'}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-gray-400">Creado por</dt>
-              <dd className="font-medium text-gray-800">{doc.created_by_name || '—'}</dd>
+              <dt className="text-text-tertiary">Creado por</dt>
+              <dd className="font-medium text-text-primary">{doc.created_by_name || '—'}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-gray-400">Origen</dt>
-              <dd className="font-medium text-gray-800">{ORIGEN_LABEL[doc.origen]}</dd>
+              <dt className="text-text-tertiary">Origen</dt>
+              <dd className="font-medium text-text-primary">{ORIGEN_LABEL[doc.origen]}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-gray-400">Versión</dt>
-              <dd className="font-medium text-gray-800">v{doc.version_number}</dd>
+              <dt className="text-text-tertiary">Versión</dt>
+              <dd className="font-medium text-text-primary">v{doc.version_number}</dd>
             </div>
           </dl>
         </section>
 
         {/* Fechas */}
         <section>
-          <h3 className="text-[10px] font-semibold tracking-widest text-gray-400 uppercase mb-2">
+          <h3 className="text-[10px] font-semibold tracking-widest text-text-tertiary uppercase mb-2">
             Fechas
           </h3>
           <dl className="space-y-2">
             <div className="flex justify-between">
-              <dt className="text-gray-400">Creada</dt>
-              <dd className="font-medium text-gray-800">{fmt(doc.created_at)}</dd>
+              <dt className="text-text-tertiary">Creada</dt>
+              <dd className="font-medium text-text-primary">{fmt(doc.created_at)}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-gray-400">Última edición</dt>
-              <dd className="font-medium text-gray-800">{fmt(doc.updated_at)}</dd>
+              <dt className="text-text-tertiary">Última edición</dt>
+              <dd className="font-medium text-text-primary">{fmt(doc.updated_at)}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-gray-400">Vencimiento</dt>
+              <dt className="text-text-tertiary">Vencimiento</dt>
               <dd
                 className={
                   'font-medium ' +
-                  (estado === 'vencida' ? 'text-red-600' : 'text-gray-800')
+                  (estado === 'vencida' ? 'text-red-600' : 'text-text-primary')
                 }
               >
                 {fmt(doc.vencimiento_parqueo)}
@@ -212,19 +213,19 @@ export default function PanelDetalle({ doc, onCerrar, permisos }: Props) {
         </section>
 
         {/* Total */}
-        <div className="flex items-baseline justify-between border-t border-gray-100 pt-4">
-          <span className="text-gray-500">Total</span>
-          <span className="text-xl font-bold text-gray-900">
+        <div className="flex items-baseline justify-between border-t border-border pt-4">
+          <span className="text-text-secondary">Total</span>
+          <span className="text-xl font-bold text-text-primary">
             {formatoMoneda(doc.data.total)}
           </span>
         </div>
       </div>
 
       {/* Acciones */}
-      <div className="shrink-0 px-5 py-4 border-t border-gray-100 space-y-2">
+      <div className="shrink-0 px-5 py-4 border-t border-border space-y-2">
         <Link
           href={`/documentos/${doc.id}`}
-          className="flex w-full items-center justify-center rounded-lg bg-brand-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-marino-900 transition-colors"
+          className="flex w-full items-center justify-center rounded-lg bg-action-primary px-4 py-2.5 text-sm font-display font-semibold text-white hover:bg-action-primary-hover transition-colors"
         >
           Abrir
         </Link>
@@ -232,7 +233,7 @@ export default function PanelDetalle({ doc, onCerrar, permisos }: Props) {
           <Link
             href={`/api/documentos/${doc.id}/pdf`}
             target="_blank"
-            className="flex items-center justify-center rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            className="flex items-center justify-center rounded-lg border border-border px-3 py-2 text-xs font-medium text-text-secondary hover:bg-surface-hover transition-colors"
           >
             Reimprimir PDF
           </Link>
@@ -240,14 +241,14 @@ export default function PanelDetalle({ doc, onCerrar, permisos }: Props) {
             <button
               onClick={handleDuplicar}
               disabled={pendiente}
-              className="rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-text-secondary hover:bg-surface-hover transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
               Duplicar
             </button>
           )}
           <Link
             href={`/documentos/${doc.id}/versiones`}
-            className="flex items-center justify-center rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            className="flex items-center justify-center rounded-lg border border-border px-3 py-2 text-xs font-medium text-text-secondary hover:bg-surface-hover transition-colors"
           >
             Ver versiones
           </Link>
@@ -268,9 +269,9 @@ export default function PanelDetalle({ doc, onCerrar, permisos }: Props) {
       {confirmarEliminar && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
           <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl">
-            <h3 className="text-base font-semibold text-gray-900">Eliminar documento</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              Se eliminará <span className="font-medium text-gray-700">{doc.importador_nombre}</span> y
+            <h3 className="text-base font-semibold text-text-primary">Eliminar documento</h3>
+            <p className="mt-1 text-sm text-text-secondary">
+              Se eliminará <span className="font-medium text-text-secondary">{doc.importador_nombre}</span> y
               todas sus versiones. Esta acción no se puede deshacer.
             </p>
             {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
@@ -278,7 +279,7 @@ export default function PanelDetalle({ doc, onCerrar, permisos }: Props) {
               <button
                 onClick={() => setConfirmarEliminar(false)}
                 disabled={pendiente}
-                className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-60"
+                className="rounded-lg border border-border bg-white px-4 py-2 text-sm font-medium text-text-secondary transition hover:bg-surface-hover disabled:opacity-60"
               >
                 Cancelar
               </button>

@@ -5,8 +5,8 @@ import { useCallback, useTransition } from 'react'
 import { ACCIONES, ACCION_LABEL } from './types'
 
 const selectCls =
-  'rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 ' +
-  'focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary'
+  'rounded-lg border border-border bg-white px-3 py-1.5 text-sm text-text-secondary ' +
+  'focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary'
 
 type Usuario = { id: string; full_name: string }
 
@@ -70,7 +70,7 @@ export default function FiltrosAuditoria({ usuarios }: { usuarios: Usuario[] }) 
         aria-label="Desde"
         title="Desde"
       />
-      <span className="text-gray-400 text-xs">–</span>
+      <span className="text-text-tertiary text-xs">–</span>
       <input
         type="date"
         value={hasta}

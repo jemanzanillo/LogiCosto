@@ -1,5 +1,21 @@
 import type { Metadata } from 'next'
+import { Outfit, Inter } from 'next/font/google'
 import './globals.css'
+
+// Tipografía híbrida del sistema: Outfit para estructura/jerarquía (font-display),
+// Inter para cuerpo y datos densos de tabla (cara por defecto).
+const outfit = Outfit({
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+  variable: '--font-outfit',
+  display: 'swap',
+})
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+  variable: '--font-inter',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: {
@@ -28,8 +44,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es">
-      <body className="bg-gray-50 text-gray-900 antialiased">
+    <html lang="es" className={`${outfit.variable} ${inter.variable}`}>
+      <body className="bg-surface-page text-text-primary font-body antialiased">
         {children}
       </body>
     </html>

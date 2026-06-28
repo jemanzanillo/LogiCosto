@@ -59,8 +59,8 @@ export default async function AjustesPage() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-xl font-semibold text-gray-900">Ajustes</h1>
-        <p className="mt-1 text-sm text-gray-500">Configuración del equipo y la cuenta.</p>
+        <h1 className="text-xl font-semibold text-text-primary">Ajustes</h1>
+        <p className="mt-1 text-sm text-text-secondary">Configuración del equipo y la cuenta.</p>
       </div>
 
       <UsuariosPanel

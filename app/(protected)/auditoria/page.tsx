@@ -91,8 +91,8 @@ export default async function AuditoriaPage({ searchParams }: { searchParams: Se
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h1 className="text-xl font-semibold text-gray-900">Auditoría</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-xl font-semibold text-text-primary">Auditoría</h1>
+        <p className="mt-1 text-sm text-text-secondary">
           Registro de acciones realizadas por el equipo.
         </p>
       </div>
@@ -102,15 +102,15 @@ export default async function AuditoriaPage({ searchParams }: { searchParams: Se
       </Suspense>
 
       {filas.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-gray-200 bg-white py-16 text-center text-sm text-gray-400">
+        <div className="rounded-xl border border-dashed border-border bg-white py-16 text-center text-sm text-text-tertiary">
           No hay acciones registradas con los filtros seleccionados.
         </div>
       ) : (
         <>
-          <div className="overflow-x-auto rounded-xl border border-gray-100 bg-white">
+          <div className="overflow-x-auto rounded-xl border border-border bg-white">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 bg-gray-50 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <tr className="border-b border-border bg-surface-hover text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">
                   <th className="px-4 py-3">Fecha y hora</th>
                   <th className="px-4 py-3">Usuario</th>
                   <th className="px-4 py-3">Acción</th>
@@ -126,14 +126,14 @@ export default async function AuditoriaPage({ searchParams }: { searchParams: Se
                       ? (f.detail.importador as string)
                       : null)
                   return (
-                    <tr key={f.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/60'}>
-                      <td className="px-4 py-3 text-gray-600 whitespace-nowrap text-xs">
+                    <tr key={f.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-surface-hover/60'}>
+                      <td className="px-4 py-3 text-text-secondary whitespace-nowrap text-xs">
                         {fmtFechaHora(f.created_at)}
                       </td>
                       <td className="px-4 py-3">
-                        <span className="font-medium text-gray-900">{f.actor_nombre}</span>
+                        <span className="font-medium text-text-primary">{f.actor_nombre}</span>
                         {f.actor_rol && (
-                          <span className="ml-1.5 text-xs text-gray-400 capitalize">
+                          <span className="ml-1.5 text-xs text-text-tertiary capitalize">
                             · {f.actor_rol}
                           </span>
                         )}
@@ -152,15 +152,15 @@ export default async function AuditoriaPage({ searchParams }: { searchParams: Se
                         {f.documento_id ? (
                           <Link
                             href={`/documentos/${f.documento_id}`}
-                            className="text-gray-700 hover:text-brand-primary transition-colors"
+                            className="text-text-secondary hover:text-brand-primary transition-colors"
                           >
                             {documento ?? 'Documento'}
                           </Link>
                         ) : (
-                          <span className="text-gray-500">{documento ?? '—'}</span>
+                          <span className="text-text-secondary">{documento ?? '—'}</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-gray-500 max-w-[260px] truncate">
+                      <td className="px-4 py-3 text-text-secondary max-w-[260px] truncate">
                         {resumenDetalle(f) || '—'}
                       </td>
                     </tr>
@@ -170,7 +170,7 @@ export default async function AuditoriaPage({ searchParams }: { searchParams: Se
             </table>
           </div>
 
-          <div className="flex items-center justify-between pt-1 text-sm text-gray-500">
+          <div className="flex items-center justify-between pt-1 text-sm text-text-secondary">
             <span>
               Mostrando {desdeN}–{hastaN} de {total} acciones
             </span>
@@ -180,20 +180,20 @@ export default async function AuditoriaPage({ searchParams }: { searchParams: Se
                   href={pageHref(Math.max(1, page - 1))}
                   aria-disabled={page <= 1}
                   className={
-                    'rounded-lg px-2.5 py-1.5 border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors ' +
+                    'rounded-lg px-2.5 py-1.5 border border-border text-text-secondary hover:bg-surface-hover transition-colors ' +
                     (page <= 1 ? 'pointer-events-none opacity-40' : '')
                   }
                 >
                   ‹
                 </Link>
-                <span className="px-2 text-gray-500">
+                <span className="px-2 text-text-secondary">
                   {page} / {totalPaginas}
                 </span>
                 <Link
                   href={pageHref(Math.min(totalPaginas, page + 1))}
                   aria-disabled={page >= totalPaginas}
                   className={
-                    'rounded-lg px-2.5 py-1.5 border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors ' +
+                    'rounded-lg px-2.5 py-1.5 border border-border text-text-secondary hover:bg-surface-hover transition-colors ' +
                     (page >= totalPaginas ? 'pointer-events-none opacity-40' : '')
                   }
                 >

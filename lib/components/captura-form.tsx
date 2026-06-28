@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { X } from 'lucide-react'
 import {
   armarData,
   validar,
@@ -29,11 +30,11 @@ type Props = {
 }
 
 const inputBase =
-  'rounded-lg border border-gray-300 px-3 py-2 text-sm ' +
-  'focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary ' +
-  'disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed'
+  'rounded-lg border border-border-strong px-3 py-2 text-sm text-text-primary ' +
+  'focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary ' +
+  'disabled:bg-surface-sunken disabled:text-text-tertiary disabled:cursor-not-allowed'
 const inputCls = 'w-full ' + inputBase
-const labelCls = 'block text-xs font-medium text-gray-600 mb-1'
+const labelCls = 'block text-xs font-display font-medium text-text-secondary mb-1'
 
 export default function CapturaForm({
   initialId,
@@ -148,7 +149,7 @@ export default function CapturaForm({
       {/* ---- Formulario ---- */}
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-800">
+          <h2 className="font-display text-lg font-semibold text-text-primary">
             {id ? 'Editar documento' : 'Nueva factura'}
           </h2>
           <span
@@ -181,14 +182,14 @@ export default function CapturaForm({
                   type="button"
                   onClick={handleCrearVersion}
                   disabled={pendingVersion}
-                  className="rounded-lg bg-brand-primary px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-brand-marino-900 disabled:opacity-60"
+                  className="rounded-lg bg-action-primary px-3 py-1.5 text-sm font-display font-semibold text-white transition hover:bg-action-primary-hover disabled:opacity-60"
                 >
                   {pendingVersion ? 'Creando…' : 'Crear nueva versión'}
                 </button>
               )}
               <Link
                 href={`/documentos/${id}/versiones`}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                className="rounded-lg border border-border bg-surface-raised px-3 py-1.5 text-sm font-display font-medium text-text-secondary transition hover:bg-surface-hover"
               >
                 Ver versiones
               </Link>
@@ -196,7 +197,7 @@ export default function CapturaForm({
                 href={`/api/documentos/${id}/pdf`}
                 target="_blank"
                 rel="noreferrer"
-                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                className="rounded-lg border border-border bg-surface-raised px-3 py-1.5 text-sm font-display font-medium text-text-secondary transition hover:bg-surface-hover"
               >
                 Reimprimir PDF
               </a>
@@ -216,10 +217,10 @@ export default function CapturaForm({
                 onClick={() => setTipo(t)}
                 disabled={bloqueado}
                 className={
-                  'flex-1 rounded-lg border px-3 py-2 text-sm font-medium capitalize transition disabled:cursor-not-allowed disabled:opacity-60 ' +
+                  'flex-1 rounded-lg border px-3 py-2 text-sm font-display font-medium capitalize transition disabled:cursor-not-allowed disabled:opacity-60 ' +
                   (form.tipo === t
-                    ? 'border-brand-primary bg-brand-primary text-white'
-                    : 'border-gray-300 bg-white text-gray-700 hover:border-brand-primary')
+                    ? 'border-action-primary bg-action-primary text-white'
+                    : 'border-border-strong bg-surface-raised text-text-secondary hover:border-action-primary')
                 }
               >
                 {t === 'vehiculo' ? 'Vehículo' : 'Contenedor'}
@@ -230,7 +231,7 @@ export default function CapturaForm({
 
         {/* Importador */}
         <fieldset className="space-y-3">
-          <legend className="text-sm font-semibold text-gray-700">Importador</legend>
+          <legend className="font-display text-sm font-semibold text-text-primary">Importador</legend>
           <div>
             <label className={labelCls}>Nombre / razón social</label>
             <input className={inputCls} disabled={bloqueado} value={form.importador.nombre} onChange={(e) => setImportador('nombre', e.target.value)} />
@@ -246,7 +247,7 @@ export default function CapturaForm({
         {/* Datos por tipo */}
         {form.tipo === 'vehiculo' ? (
           <fieldset className="grid grid-cols-2 gap-3">
-            <legend className="col-span-2 text-sm font-semibold text-gray-700">Datos del vehículo</legend>
+            <legend className="col-span-2 font-display text-sm font-semibold text-text-primary">Datos del vehículo</legend>
             <div>
               <label className={labelCls}>Marca</label>
               <input className={inputCls} disabled={bloqueado} value={form.vehiculo.marca} onChange={(e) => setVehiculo('marca', e.target.value)} />
@@ -275,7 +276,7 @@ export default function CapturaForm({
           </fieldset>
         ) : (
           <fieldset className="space-y-3">
-            <legend className="text-sm font-semibold text-gray-700">Datos del contenedor</legend>
+            <legend className="font-display text-sm font-semibold text-text-primary">Datos del contenedor</legend>
             <div>
               <label className={labelCls}>Número de BL</label>
               <input className={inputCls} disabled={bloqueado} value={form.contenedor.bl} onChange={(e) => setContenedor('bl', e.target.value)} />
@@ -305,7 +306,7 @@ export default function CapturaForm({
 
         {/* Conceptos */}
         <fieldset className="space-y-3">
-          <legend className="text-sm font-semibold text-gray-700">Conceptos</legend>
+          <legend className="font-display text-sm font-semibold text-text-primary">Conceptos</legend>
 
           {/* Entrada */}
           {!bloqueado && (
@@ -330,7 +331,7 @@ export default function CapturaForm({
               <button
                 type="button"
                 onClick={handleAgregarConcepto}
-                className="rounded-lg bg-brand-primary px-3 py-2 text-sm font-semibold text-white hover:bg-brand-marino-900 whitespace-nowrap"
+                className="rounded-lg bg-action-primary px-3 py-2 text-sm font-display font-semibold text-white hover:bg-action-primary-hover whitespace-nowrap"
               >
                 + Agregar
               </button>
@@ -341,31 +342,31 @@ export default function CapturaForm({
 
           {/* Lista de conceptos agregados */}
           {form.conceptos.length === 0 ? (
-            <p className="rounded-lg border border-dashed border-gray-200 py-4 text-center text-sm text-gray-400">
+            <p className="rounded-lg border border-dashed border-border py-4 text-center text-sm text-text-tertiary">
               Aún no hay conceptos. Agrega el primero.
             </p>
           ) : (
-            <ul className="overflow-hidden rounded-lg border border-gray-200 divide-y divide-gray-100">
+            <ul className="overflow-hidden rounded-lg border border-border divide-y divide-border/60">
               {form.conceptos.map((c, i) => (
-                <li key={i} className="flex items-center gap-3 bg-white px-3 py-2.5">
-                  <span className="flex-1 text-sm text-gray-800">{c.concepto}</span>
-                  <span className="tabular-nums text-sm font-medium text-gray-700">
+                <li key={i} className="flex items-center gap-3 bg-surface-raised px-3 py-2.5">
+                  <span className="flex-1 text-sm text-text-primary">{c.concepto}</span>
+                  <span className="tabular-nums text-sm font-medium text-text-secondary">
                     {formatoMoneda(c.monto)}
                   </span>
                   {!bloqueado && (
                     <button
                       type="button"
                       onClick={() => eliminarConcepto(i)}
-                      className="text-gray-400 hover:text-red-500 transition-colors"
+                      className="text-text-tertiary hover:text-status-vencida-dot transition-colors"
                       aria-label={`Eliminar ${c.concepto}`}
                     >
-                      ✕
+                      <X size={16} />
                     </button>
                   )}
                 </li>
               ))}
-              <li className="flex justify-end bg-gray-50 px-3 py-2">
-                <span className="text-sm font-semibold text-gray-800">
+              <li className="flex justify-end bg-surface-sunken px-3 py-2">
+                <span className="font-display text-sm font-semibold text-text-primary">
                   Total: {formatoMoneda(total)}
                 </span>
               </li>
@@ -377,23 +378,23 @@ export default function CapturaForm({
 
         {/* Acciones */}
         {!bloqueado && tiene('documento.exportar') && (
-          <div className="flex items-center gap-3 border-t border-gray-100 pt-4">
+          <div className="flex items-center gap-3 border-t border-border pt-4">
             <button
               type="button"
               onClick={handleExportar}
               disabled={guardando}
-              className="rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-marino-900 disabled:opacity-60"
+              className="rounded-lg bg-action-primary px-4 py-2 text-sm font-display font-semibold text-white transition hover:bg-action-primary-hover disabled:opacity-60"
             >
               {pendingExportar ? 'Exportando…' : 'Exportar PDF'}
             </button>
-            {mensaje && <span className="text-sm text-gray-500">{mensaje}</span>}
+            {mensaje && <span className="text-sm text-text-secondary">{mensaje}</span>}
           </div>
         )}
       </div>
 
       {/* ---- Preview ---- */}
       <div className="lg:sticky lg:top-6 lg:self-start">
-        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-400">Vista previa</p>
+        <p className="mb-2 font-display text-xs font-medium uppercase tracking-wide text-text-tertiary">Vista previa</p>
         <DocumentoPreview data={data} />
       </div>
     </div>
