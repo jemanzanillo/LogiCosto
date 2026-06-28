@@ -1,0 +1,131 @@
+<!--
+  Plantilla de correo: Invitación de usuario (LogiCosto)
+  -------------------------------------------------------
+  Cómo instalarla en Supabase:
+    Dashboard → Authentication → Emails → plantilla "Invite user"
+    → pega TODO este HTML en el cuerpo y guarda.
+    Asunto sugerido: «Te invitaron a LogiCosto»
+
+  Variables de Supabase usadas:
+    {{ .ConfirmationURL }}  → enlace para aceptar la invitación y crear la contraseña
+    {{ .Data.full_name }}   → nombre que enviamos en inviteUserByEmail({ data: { full_name } })
+
+  Estilos en línea por compatibilidad con clientes de correo. Colores del
+  sistema de diseño LogiCosto (tailwind.config.ts): marino #1A2B4A, eléctrico
+  #2E7CF6 / #7AACF9, ámbar #F5A623, grises.
+-->
+<!DOCTYPE html>
+<html lang="es" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="x-apple-disable-message-reformatting" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Invitación a LogiCosto</title>
+</head>
+<body style="margin:0; padding:0; background-color:#E8EDF5; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;">
+  <!-- Preheader (oculto) -->
+  <div style="display:none; max-height:0; overflow:hidden; opacity:0; mso-hide:all; font-size:1px; line-height:1px; color:#E8EDF5;">
+    Te invitaron a unirte a LogiCosto. Acepta la invitación y crea tu contraseña.
+  </div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#E8EDF5;">
+    <tr>
+      <td align="center" style="padding:32px 16px;">
+
+        <!-- Tarjeta -->
+        <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="width:560px; max-width:100%; background-color:#FFFFFF; border-radius:16px; overflow:hidden; border:1px solid #C2CFE3;">
+
+          <!-- Encabezado -->
+          <tr>
+            <td style="background-color:#1A2B4A; padding:24px 32px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="vertical-align:middle;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="background-color:#2E7CF6; border-radius:8px; width:36px; height:36px; text-align:center; vertical-align:middle; font-family:'Outfit','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:15px; font-weight:700; color:#FFFFFF; letter-spacing:0.5px;">
+                          LC
+                        </td>
+                        <td style="padding-left:12px; font-family:'Outfit','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:18px; font-weight:700; letter-spacing:0.3px; white-space:nowrap;">
+                          <span style="color:#FFFFFF;">Logi</span><span style="color:#7AACF9;">Costo</span>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Cuerpo -->
+          <tr>
+            <td style="padding:36px 32px 8px 32px; font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+              <h1 style="margin:0 0 16px 0; font-size:22px; line-height:1.3; font-weight:700; color:#1A2B4A;">
+                Te invitaron a LogiCosto
+              </h1>
+              <p style="margin:0 0 16px 0; font-size:15px; line-height:1.6; color:#3F4A5C;">
+                Hola{{ if .Data.full_name }} {{ .Data.full_name }}{{ end }},
+              </p>
+              <p style="margin:0 0 24px 0; font-size:15px; line-height:1.6; color:#3F4A5C;">
+                Te dieron acceso al panel de gestión de facturas de costos. Para entrar, solo
+                tienes que aceptar la invitación y crear tu contraseña.
+              </p>
+
+              <!-- Botón -->
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 28px 0;">
+                <tr>
+                  <td align="center" style="border-radius:8px; background-color:#1A2B4A;">
+                    <a href="{{ .ConfirmationURL }}" target="_blank"
+                       style="display:inline-block; padding:14px 30px; font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:15px; font-weight:600; color:#FFFFFF; text-decoration:none; border-radius:8px;">
+                      Aceptar invitación
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:0 0 8px 0; font-size:13px; line-height:1.6; color:#6B7685;">
+                Si el botón no funciona, copia y pega este enlace en tu navegador:
+              </p>
+              <p style="margin:0 0 24px 0; font-size:13px; line-height:1.5; word-break:break-all;">
+                <a href="{{ .ConfirmationURL }}" target="_blank" style="color:#2E7CF6; text-decoration:underline;">{{ .ConfirmationURL }}</a>
+              </p>
+
+              <!-- Aviso -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 8px 0;">
+                <tr>
+                  <td style="background-color:#FEF5E6; border:1px solid #FBC660; border-radius:10px; padding:12px 16px;">
+                    <p style="margin:0; font-size:13px; line-height:1.5; color:#A05E05;">
+                      Si no esperabas esta invitación, puedes ignorar este correo sin problema.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Separador -->
+          <tr>
+            <td style="padding:24px 32px 0 32px;">
+              <div style="border-top:1px solid #E8EDF5; font-size:0; line-height:0;">&nbsp;</div>
+            </td>
+          </tr>
+
+          <!-- Pie -->
+          <tr>
+            <td style="padding:16px 32px 32px 32px; font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+              <p style="margin:0; font-size:12px; line-height:1.6; color:#8A93A3;">
+                LogiCosto · Panel de gestión de costos de importación<br />
+                Este es un correo automático, por favor no respondas a este mensaje.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+        <!-- /Tarjeta -->
+
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
