@@ -23,6 +23,14 @@ export default async function HistorialPage({ searchParams }: { searchParams: Se
 
   const supabase = await createClient()
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  const { data: miPerfil } = user
+    ? await supabase.from('profiles').select('role').eq('id', user.id).single()
+    : { data: null }
+  const esTitular = miPerfil?.role === 'titular'
+
   // Construir la query con filtros
   let query = supabase
     .from('documents')
@@ -127,6 +135,7 @@ export default async function HistorialPage({ searchParams }: { searchParams: Se
           total={count ?? 0}
           page={page}
           pageSize={PAGE_SIZE}
+          esTitular={esTitular}
         />
       </Suspense>
     </div>

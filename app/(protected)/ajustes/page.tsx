@@ -29,6 +29,9 @@ export default async function AjustesPage() {
     }
   }
 
+  const miPerfil = (perfiles ?? []).find((p) => p.id === user?.id)
+  const esTitular = miPerfil?.role === 'titular'
+
   const usuarios: UsuarioFila[] = (perfiles ?? []).map((p) => ({
     id: p.id,
     full_name: p.full_name,
@@ -47,6 +50,7 @@ export default async function AjustesPage() {
         usuarios={usuarios}
         currentUserId={user?.id ?? ''}
         serviceRoleConfigurado={serviceRoleConfigurado}
+        esTitular={esTitular}
       />
     </div>
   )

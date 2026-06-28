@@ -23,7 +23,7 @@ async function getPerfil() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('id, org_id')
+    .select('id, org_id, role')
     .eq('id', user.id)
     .single()
 
@@ -156,6 +156,7 @@ export async function crearNuevaVersion(id: string, nota?: string): Promise<Guar
   const ctx = await getPerfil()
   if (!ctx) return { ok: false, error: 'Sesión no válida.' }
   const { supabase, profile } = ctx
+  if (profile.role !== 'titular') return { ok: false, error: 'Solo el titular puede crear una nueva versión.' }
 
   const { data: doc, error: docErr } = await supabase
     .from('documents')
@@ -224,6 +225,7 @@ export async function marcarAprobada(id: string): Promise<ExportarResult> {
   const ctx = await getPerfil()
   if (!ctx) return { ok: false, error: 'Sesión no válida.' }
   const { supabase, profile } = ctx
+  if (profile.role !== 'titular') return { ok: false, error: 'Solo el titular puede aprobar documentos.' }
 
   const { error } = await supabase
     .from('documents')
@@ -249,6 +251,7 @@ export async function revertirPendiente(id: string): Promise<ExportarResult> {
   const ctx = await getPerfil()
   if (!ctx) return { ok: false, error: 'Sesión no válida.' }
   const { supabase, profile } = ctx
+  if (profile.role !== 'titular') return { ok: false, error: 'Solo el titular puede revertir el estado.' }
 
   const { error } = await supabase
     .from('documents')
@@ -341,6 +344,7 @@ export async function eliminarDocumento(id: string): Promise<ExportarResult> {
   const ctx = await getPerfil()
   if (!ctx) return { ok: false, error: 'Sesión no válida.' }
   const { supabase, profile } = ctx
+  if (profile.role !== 'titular') return { ok: false, error: 'Solo el titular puede eliminar documentos.' }
 
   const { data: doc } = await supabase
     .from('documents')

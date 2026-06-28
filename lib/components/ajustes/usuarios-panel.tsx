@@ -14,9 +14,10 @@ type Props = {
   usuarios: UsuarioFila[]
   currentUserId: string
   serviceRoleConfigurado: boolean
+  esTitular: boolean
 }
 
-export default function UsuariosPanel({ usuarios, currentUserId, serviceRoleConfigurado }: Props) {
+export default function UsuariosPanel({ usuarios, currentUserId, serviceRoleConfigurado, esTitular }: Props) {
   const router = useRouter()
   const [pendiente, startTransition] = useTransition()
   const [mensaje, setMensaje] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null)
@@ -68,6 +69,12 @@ export default function UsuariosPanel({ usuarios, currentUserId, serviceRoleConf
         </div>
       )}
 
+      {serviceRoleConfigurado && !esTitular && (
+        <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+          Solo el <span className="font-medium">titular</span> puede invitar usuarios y cambiar roles.
+        </div>
+      )}
+
       {mensaje && (
         <p
           className={
@@ -106,7 +113,7 @@ export default function UsuariosPanel({ usuarios, currentUserId, serviceRoleConf
                 <td className="px-4 py-3">
                   <select
                     value={ROLES.includes(u.role as (typeof ROLES)[number]) ? u.role : ''}
-                    disabled={!serviceRoleConfigurado || pendiente}
+                    disabled={!serviceRoleConfigurado || !esTitular || pendiente}
                     onChange={(e) => handleCambiarRol(u.id, e.target.value)}
                     className={inputCls + ' py-1.5'}
                     aria-label={`Rol de ${u.full_name}`}
@@ -139,7 +146,7 @@ export default function UsuariosPanel({ usuarios, currentUserId, serviceRoleConf
             <input
               className={inputCls + ' w-full'}
               value={nombre}
-              disabled={!serviceRoleConfigurado || pendiente}
+              disabled={!serviceRoleConfigurado || !esTitular || pendiente}
               onChange={(e) => setNombre(e.target.value)}
               placeholder="Nombre y apellido"
             />
@@ -150,7 +157,7 @@ export default function UsuariosPanel({ usuarios, currentUserId, serviceRoleConf
               type="email"
               className={inputCls + ' w-full'}
               value={email}
-              disabled={!serviceRoleConfigurado || pendiente}
+              disabled={!serviceRoleConfigurado || !esTitular || pendiente}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="correo@ejemplo.com"
             />
@@ -160,7 +167,7 @@ export default function UsuariosPanel({ usuarios, currentUserId, serviceRoleConf
             <select
               className={inputCls + ' w-full py-2'}
               value={rol}
-              disabled={!serviceRoleConfigurado || pendiente}
+              disabled={!serviceRoleConfigurado || !esTitular || pendiente}
               onChange={(e) => setRol(e.target.value)}
             >
               {ROLES.map((r) => (
@@ -173,7 +180,7 @@ export default function UsuariosPanel({ usuarios, currentUserId, serviceRoleConf
           <button
             type="button"
             onClick={handleInvitar}
-            disabled={!serviceRoleConfigurado || pendiente}
+            disabled={!serviceRoleConfigurado || !esTitular || pendiente}
             className="rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-marino-900 disabled:opacity-60"
           >
             {pendiente ? 'Enviando…' : 'Invitar'}

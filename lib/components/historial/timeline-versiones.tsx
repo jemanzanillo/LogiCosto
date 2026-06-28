@@ -31,6 +31,7 @@ type Props = {
   estadoActual: EstadoUI
   currentVersionId: string | null
   versiones: VersionFila[]
+  esTitular: boolean
 }
 
 function fmtFechaHora(iso: string) {
@@ -49,6 +50,7 @@ export default function TimelineVersiones({
   estadoActual,
   currentVersionId,
   versiones,
+  esTitular,
 }: Props) {
   const router = useRouter()
   const [pendiente, startTransition] = useTransition()
@@ -96,15 +98,17 @@ export default function TimelineVersiones({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-end">
-        <button
-          type="button"
-          onClick={() => setModalAbierto(true)}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-marino-900"
-        >
-          + Crear nueva versión
-        </button>
-      </div>
+      {esTitular && (
+        <div className="flex items-center justify-end">
+          <button
+            type="button"
+            onClick={() => setModalAbierto(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-marino-900"
+          >
+            + Crear nueva versión
+          </button>
+        </div>
+      )}
 
       {error && (
         <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -177,12 +181,12 @@ export default function TimelineVersiones({
 
                 {/* Acciones */}
                 <div className="mt-3 flex flex-wrap items-center gap-2">
-                  {esActual && status === 'exportada' && (
+                  {esActual && status === 'exportada' && esTitular && (
                     <button type="button" onClick={handleAprobar} disabled={pendiente} className={btnPrimario}>
                       Marcar como aprobada
                     </button>
                   )}
-                  {esActual && status === 'finalizada' && (
+                  {esActual && status === 'finalizada' && esTitular && (
                     <button type="button" onClick={handleRevertir} disabled={pendiente} className={btnSecundario}>
                       Revertir a pendiente
                     </button>

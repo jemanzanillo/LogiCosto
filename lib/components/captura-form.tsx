@@ -22,6 +22,7 @@ type Props = {
   initialId?: string
   initialStatus?: DocStatus
   initialForm?: FormState
+  esTitular?: boolean
 }
 
 const inputBase =
@@ -31,7 +32,7 @@ const inputBase =
 const inputCls = 'w-full ' + inputBase
 const labelCls = 'block text-xs font-medium text-gray-600 mb-1'
 
-export default function CapturaForm({ initialId, initialStatus, initialForm }: Props) {
+export default function CapturaForm({ initialId, initialStatus, initialForm, esTitular = true }: Props) {
   const router = useRouter()
   const [form, setForm] = useState<FormState>(initialForm ?? formStateVacio())
   const [id, setId] = useState<string | undefined>(initialId)
@@ -166,14 +167,16 @@ export default function CapturaForm({ initialId, initialStatus, initialForm }: P
               . Para modificarlo, crea una nueva versión.
             </p>
             <div className="mt-2.5 flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={handleCrearVersion}
-                disabled={pendingVersion}
-                className="rounded-lg bg-brand-primary px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-brand-marino-900 disabled:opacity-60"
-              >
-                {pendingVersion ? 'Creando…' : 'Crear nueva versión'}
-              </button>
+              {esTitular && (
+                <button
+                  type="button"
+                  onClick={handleCrearVersion}
+                  disabled={pendingVersion}
+                  className="rounded-lg bg-brand-primary px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-brand-marino-900 disabled:opacity-60"
+                >
+                  {pendingVersion ? 'Creando…' : 'Crear nueva versión'}
+                </button>
+              )}
               <Link
                 href={`/documentos/${id}/versiones`}
                 className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"

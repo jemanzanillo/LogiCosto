@@ -17,6 +17,14 @@ export default async function VersionesPage({
   const { id } = await params
   const supabase = await createClient()
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  const { data: miPerfil } = user
+    ? await supabase.from('profiles').select('role').eq('id', user.id).single()
+    : { data: null }
+  const esTitular = miPerfil?.role === 'titular'
+
   const { data: doc } = await supabase
     .from('documents')
     .select('id, tipo, status, importador_nombre, vencimiento_parqueo, current_version_id')
@@ -105,6 +113,7 @@ export default async function VersionesPage({
         estadoActual={estadoActual}
         currentVersionId={doc.current_version_id}
         versiones={versiones}
+        esTitular={esTitular}
       />
     </div>
   )

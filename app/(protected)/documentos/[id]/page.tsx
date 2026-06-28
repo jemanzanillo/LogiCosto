@@ -11,6 +11,14 @@ export default async function EditarDocumentoPage({
   const { id } = await params
   const supabase = await createClient()
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  const { data: miPerfil } = user
+    ? await supabase.from('profiles').select('role').eq('id', user.id).single()
+    : { data: null }
+  const esTitular = miPerfil?.role === 'titular'
+
   const { data: doc } = await supabase
     .from('documents')
     .select('id, status, current_version_id')
@@ -33,5 +41,5 @@ export default async function EditarDocumentoPage({
 
   const form = formStateDesdeData(version.data as unknown as DocumentoData)
 
-  return <CapturaForm initialId={doc.id} initialStatus={doc.status} initialForm={form} />
+  return <CapturaForm initialId={doc.id} initialStatus={doc.status} initialForm={form} esTitular={esTitular} />
 }

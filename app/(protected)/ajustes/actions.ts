@@ -16,7 +16,7 @@ async function getPerfil() {
   if (!user) return null
   const { data: profile } = await supabase
     .from('profiles')
-    .select('id, org_id')
+    .select('id, org_id, role')
     .eq('id', user.id)
     .single()
   if (!profile) return null
@@ -33,6 +33,7 @@ export async function cambiarRol(profileId: string, role: string): Promise<Resul
 
   const ctx = await getPerfil()
   if (!ctx) return { ok: false, error: 'Sesión no válida.' }
+  if (ctx.profile.role !== 'titular') return { ok: false, error: 'Solo el titular puede cambiar roles.' }
 
   const admin = createAdminClient()
   const { error } = await admin
@@ -65,6 +66,7 @@ export async function invitarUsuario(
 
   const ctx = await getPerfil()
   if (!ctx) return { ok: false, error: 'Sesión no válida.' }
+  if (ctx.profile.role !== 'titular') return { ok: false, error: 'Solo el titular puede invitar usuarios.' }
 
   const admin = createAdminClient()
 
