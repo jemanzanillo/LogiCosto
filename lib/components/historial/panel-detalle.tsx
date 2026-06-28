@@ -1,7 +1,10 @@
 'use client'
 
+import { useState, useTransition } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { formatoMoneda } from '@/lib/pdf/formato'
+import { duplicarDocumento, eliminarDocumento } from '@/app/(protected)/documentos/actions'
 import {
   estadoUI,
   ESTADO_LABEL,
@@ -26,6 +29,36 @@ type Props = {
 
 export default function PanelDetalle({ doc, onCerrar }: Props) {
   const estado = estadoUI(doc)
+  const router = useRouter()
+  const [pendiente, startTransition] = useTransition()
+  const [confirmarEliminar, setConfirmarEliminar] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  function handleDuplicar() {
+    setError(null)
+    startTransition(async () => {
+      const res = await duplicarDocumento(doc.id)
+      if (!res.ok) {
+        setError('error' in res ? res.error : 'No se pudo duplicar.')
+        return
+      }
+      router.push(`/documentos/${res.id}`)
+    })
+  }
+
+  function handleEliminar() {
+    setError(null)
+    startTransition(async () => {
+      const res = await eliminarDocumento(doc.id)
+      if (!res.ok) {
+        setError(res.error)
+        return
+      }
+      setConfirmarEliminar(false)
+      onCerrar()
+      router.refresh()
+    })
+  }
 
   return (
     <aside className="w-[380px] shrink-0 flex flex-col bg-white border-l border-gray-100 overflow-y-auto">
@@ -202,9 +235,9 @@ export default function PanelDetalle({ doc, onCerrar }: Props) {
             Reimprimir PDF
           </Link>
           <button
-            disabled
-            className="rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-400 cursor-not-allowed"
-            title="Próximamente"
+            onClick={handleDuplicar}
+            disabled={pendiente}
+            className="rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           >
             Duplicar
           </button>
@@ -215,14 +248,45 @@ export default function PanelDetalle({ doc, onCerrar }: Props) {
             Ver versiones
           </Link>
           <button
-            disabled
-            className="rounded-lg border border-red-100 px-3 py-2 text-xs font-medium text-red-300 cursor-not-allowed"
-            title="Próximamente"
+            onClick={() => { setError(null); setConfirmarEliminar(true) }}
+            disabled={pendiente}
+            className="rounded-lg border border-red-100 px-3 py-2 text-xs font-medium text-red-500 hover:bg-red-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           >
             Eliminar
           </button>
         </div>
+        {error && <p className="text-xs text-red-600">{error}</p>}
       </div>
+
+      {/* Confirmación de borrado */}
+      {confirmarEliminar && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+          <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl">
+            <h3 className="text-base font-semibold text-gray-900">Eliminar documento</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Se eliminará <span className="font-medium text-gray-700">{doc.importador_nombre}</span> y
+              todas sus versiones. Esta acción no se puede deshacer.
+            </p>
+            {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                onClick={() => setConfirmarEliminar(false)}
+                disabled={pendiente}
+                className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-60"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleEliminar}
+                disabled={pendiente}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
+              >
+                {pendiente ? 'Eliminando…' : 'Eliminar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   )
 }

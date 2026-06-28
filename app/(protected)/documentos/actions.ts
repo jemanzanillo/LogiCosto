@@ -269,3 +269,96 @@ export async function revertirPendiente(id: string): Promise<ExportarResult> {
   revalidatePath('/historial')
   return { ok: true }
 }
+
+// Duplica un documento: crea uno nuevo en borrador con el snapshot vigente del
+// original como su versión 1. Devuelve el id del nuevo para abrirlo y editarlo.
+export async function duplicarDocumento(id: string): Promise<GuardarResult> {
+  const ctx = await getPerfil()
+  if (!ctx) return { ok: false, error: 'Sesión no válida.' }
+  const { supabase, profile } = ctx
+
+  const { data: orig, error: origErr } = await supabase
+    .from('documents')
+    .select('tipo, origen, importador_id, importador_nombre, importador_rnc, vencimiento_parqueo, current_version_id')
+    .eq('id', id)
+    .single()
+  if (origErr || !orig) return { ok: false, error: origErr?.message ?? 'Documento no encontrado.' }
+
+  const verQuery = supabase.from('document_versions').select('data').eq('document_id', id)
+  const { data: actual, error: actualErr } = orig.current_version_id
+    ? await verQuery.eq('id', orig.current_version_id).single()
+    : await verQuery.eq('version_number', 1).single()
+  if (actualErr || !actual) return { ok: false, error: actualErr?.message ?? 'No se encontró la versión a duplicar.' }
+
+  const { data: doc, error: docErr } = await supabase
+    .from('documents')
+    .insert({
+      org_id: profile.org_id,
+      created_by: profile.id,
+      tipo: orig.tipo,
+      status: 'borrador',
+      origen: 'app',
+      importador_id: orig.importador_id,
+      importador_nombre: orig.importador_nombre,
+      importador_rnc: orig.importador_rnc,
+      vencimiento_parqueo: orig.vencimiento_parqueo,
+    })
+    .select('id')
+    .single()
+  if (docErr || !doc) return { ok: false, error: docErr?.message ?? 'No se pudo crear la copia.' }
+
+  const { data: version, error: verErr } = await supabase
+    .from('document_versions')
+    .insert({
+      document_id: doc.id,
+      version_number: 1,
+      data: actual.data,
+      created_by: profile.id,
+    })
+    .select('id')
+    .single()
+  if (verErr || !version) return { ok: false, error: verErr?.message ?? 'No se pudo crear la versión.' }
+
+  await supabase.from('documents').update({ current_version_id: version.id }).eq('id', doc.id)
+
+  await supabase.from('audit_log').insert({
+    org_id: profile.org_id,
+    document_id: doc.id,
+    actor_profile_id: profile.id,
+    action: 'crear',
+    detail: { duplicado_de: id },
+  })
+
+  revalidatePath('/historial')
+  revalidatePath(`/documentos/${doc.id}`)
+  return { ok: true, id: doc.id }
+}
+
+// Elimina un documento. Las versiones se borran en cascada (FK CASCADE) y las
+// entradas de audit_log quedan con document_id null (FK SET NULL); se registra
+// la acción 'eliminar' antes de borrar (su document_id se anula al hacerlo).
+export async function eliminarDocumento(id: string): Promise<ExportarResult> {
+  const ctx = await getPerfil()
+  if (!ctx) return { ok: false, error: 'Sesión no válida.' }
+  const { supabase, profile } = ctx
+
+  const { data: doc } = await supabase
+    .from('documents')
+    .select('importador_nombre, tipo')
+    .eq('id', id)
+    .single()
+
+  await supabase.from('audit_log').insert({
+    org_id: profile.org_id,
+    document_id: id,
+    actor_profile_id: profile.id,
+    action: 'eliminar',
+    detail: { importador: doc?.importador_nombre ?? null, tipo: doc?.tipo ?? null },
+  })
+
+  const { error } = await supabase.from('documents').delete().eq('id', id)
+  if (error) return { ok: false, error: error.message }
+
+  revalidatePath('/historial')
+  return { ok: true }
+}
