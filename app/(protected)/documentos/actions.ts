@@ -45,7 +45,16 @@ export async function guardarBorrador(form: FormState, id?: string): Promise<Gua
   const dataJson = data as unknown as Json
 
   if (id) {
-    // Actualizar documento existente + snapshot de la versión 1.
+    // Actualizar documento existente + snapshot de la versión vigente.
+    // Solo aplica a borradores: una vez Pendiente/Aprobada el formulario se
+    // bloquea y los cambios pasan por crearNuevaVersion().
+    const { data: doc, error: readErr } = await supabase
+      .from('documents')
+      .select('current_version_id')
+      .eq('id', id)
+      .single()
+    if (readErr || !doc) return { ok: false, error: readErr?.message ?? 'Documento no encontrado.' }
+
     const { error: docErr } = await supabase
       .from('documents')
       .update({
@@ -58,14 +67,16 @@ export async function guardarBorrador(form: FormState, id?: string): Promise<Gua
       .eq('id', id)
     if (docErr) return { ok: false, error: docErr.message }
 
-    const { error: verErr } = await supabase
-      .from('document_versions')
-      .update({ data: dataJson })
-      .eq('document_id', id)
-      .eq('version_number', 1)
+    // Apuntar a la versión vigente (current_version_id); fallback a la v1 para
+    // documentos antiguos creados antes de fijar el puntero.
+    const verUpdate = supabase.from('document_versions').update({ data: dataJson })
+    const { error: verErr } = doc.current_version_id
+      ? await verUpdate.eq('id', doc.current_version_id)
+      : await verUpdate.eq('document_id', id).eq('version_number', 1)
     if (verErr) return { ok: false, error: verErr.message }
 
     revalidatePath(`/documentos/${id}`)
+    revalidatePath('/historial')
     return { ok: true, id }
   }
 
@@ -108,6 +119,7 @@ export async function guardarBorrador(form: FormState, id?: string): Promise<Gua
   })
 
   revalidatePath(`/documentos/${doc.id}`)
+  revalidatePath('/historial')
   return { ok: true, id: doc.id }
 }
 
@@ -132,5 +144,128 @@ export async function exportar(id: string): Promise<ExportarResult> {
   })
 
   revalidatePath(`/documentos/${id}`)
+  revalidatePath('/historial')
+  return { ok: true }
+}
+
+// Crea una versión nueva (v+1) copiando el snapshot de la versión vigente y
+// devuelve el documento a estado borrador para corregirlo sin perder el
+// historial. Es la única vía de edición cuando el documento ya está
+// Pendiente/Aprobada (ver bloqueo en captura-form).
+export async function crearNuevaVersion(id: string, nota?: string): Promise<GuardarResult> {
+  const ctx = await getPerfil()
+  if (!ctx) return { ok: false, error: 'Sesión no válida.' }
+  const { supabase, profile } = ctx
+
+  const { data: doc, error: docErr } = await supabase
+    .from('documents')
+    .select('current_version_id')
+    .eq('id', id)
+    .single()
+  if (docErr || !doc) return { ok: false, error: docErr?.message ?? 'Documento no encontrado.' }
+
+  // Snapshot vigente + número de versión máximo.
+  const verQuery = supabase.from('document_versions').select('data').eq('document_id', id)
+  const { data: actual, error: actualErr } = doc.current_version_id
+    ? await verQuery.eq('id', doc.current_version_id).single()
+    : await verQuery.eq('version_number', 1).single()
+  if (actualErr || !actual) return { ok: false, error: actualErr?.message ?? 'No se encontró la versión vigente.' }
+
+  const { data: max } = await supabase
+    .from('document_versions')
+    .select('version_number')
+    .eq('document_id', id)
+    .order('version_number', { ascending: false })
+    .limit(1)
+    .single()
+  const nextVersion = (max?.version_number ?? 0) + 1
+
+  const notaLimpia = nota?.trim() || null
+
+  const { data: version, error: verErr } = await supabase
+    .from('document_versions')
+    .insert({
+      document_id: id,
+      version_number: nextVersion,
+      data: actual.data,
+      nota: notaLimpia,
+      created_by: profile.id,
+    })
+    .select('id')
+    .single()
+  if (verErr || !version) return { ok: false, error: verErr?.message ?? 'No se pudo crear la versión.' }
+
+  const { error: updErr } = await supabase
+    .from('documents')
+    .update({
+      current_version_id: version.id,
+      status: 'borrador',
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+  if (updErr) return { ok: false, error: updErr.message }
+
+  await supabase.from('audit_log').insert({
+    org_id: profile.org_id,
+    document_id: id,
+    actor_profile_id: profile.id,
+    action: 'editar',
+    detail: { version: nextVersion, nota: notaLimpia },
+  })
+
+  revalidatePath(`/documentos/${id}`)
+  revalidatePath(`/documentos/${id}/versiones`)
+  revalidatePath('/historial')
+  return { ok: true, id }
+}
+
+// Transición Pendiente → Aprobada (exportada → finalizada).
+export async function marcarAprobada(id: string): Promise<ExportarResult> {
+  const ctx = await getPerfil()
+  if (!ctx) return { ok: false, error: 'Sesión no válida.' }
+  const { supabase, profile } = ctx
+
+  const { error } = await supabase
+    .from('documents')
+    .update({ status: 'finalizada', updated_at: new Date().toISOString() })
+    .eq('id', id)
+  if (error) return { ok: false, error: error.message }
+
+  await supabase.from('audit_log').insert({
+    org_id: profile.org_id,
+    document_id: id,
+    actor_profile_id: profile.id,
+    action: 'finalizar',
+  })
+
+  revalidatePath(`/documentos/${id}`)
+  revalidatePath(`/documentos/${id}/versiones`)
+  revalidatePath('/historial')
+  return { ok: true }
+}
+
+// Transición Aprobada → Pendiente (finalizada → exportada).
+export async function revertirPendiente(id: string): Promise<ExportarResult> {
+  const ctx = await getPerfil()
+  if (!ctx) return { ok: false, error: 'Sesión no válida.' }
+  const { supabase, profile } = ctx
+
+  const { error } = await supabase
+    .from('documents')
+    .update({ status: 'exportada', updated_at: new Date().toISOString() })
+    .eq('id', id)
+  if (error) return { ok: false, error: error.message }
+
+  await supabase.from('audit_log').insert({
+    org_id: profile.org_id,
+    document_id: id,
+    actor_profile_id: profile.id,
+    action: 'revisar',
+    detail: { de: 'finalizada', a: 'exportada' },
+  })
+
+  revalidatePath(`/documentos/${id}`)
+  revalidatePath(`/documentos/${id}/versiones`)
+  revalidatePath('/historial')
   return { ok: true }
 }

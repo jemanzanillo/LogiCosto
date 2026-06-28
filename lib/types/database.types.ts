@@ -73,6 +73,7 @@ export type Database = {
           data: Json
           document_id: string
           id: string
+          nota: string | null
           version_number: number
         }
         Insert: {
@@ -81,6 +82,7 @@ export type Database = {
           data: Json
           document_id: string
           id?: string
+          nota?: string | null
           version_number: number
         }
         Update: {
@@ -89,6 +91,7 @@ export type Database = {
           data?: Json
           document_id?: string
           id?: string
+          nota?: string | null
           version_number?: number
         }
         Relationships: [

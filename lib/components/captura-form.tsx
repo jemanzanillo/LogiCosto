@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useRef, useState, useTransition } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   armarData,
@@ -12,7 +13,7 @@ import {
 } from '@/lib/documentos/types'
 import type { Database } from '@/lib/types/database.types'
 import { formatoMoneda } from '@/lib/pdf/formato'
-import { guardarBorrador, exportar } from '@/app/(protected)/documentos/actions'
+import { guardarBorrador, exportar, crearNuevaVersion } from '@/app/(protected)/documentos/actions'
 import DocumentoPreview from './documento-preview'
 
 type DocStatus = Database['public']['Enums']['document_status']
@@ -25,7 +26,8 @@ type Props = {
 
 const inputBase =
   'rounded-lg border border-gray-300 px-3 py-2 text-sm ' +
-  'focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary'
+  'focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary ' +
+  'disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed'
 const inputCls = 'w-full ' + inputBase
 const labelCls = 'block text-xs font-medium text-gray-600 mb-1'
 
@@ -37,6 +39,11 @@ export default function CapturaForm({ initialId, initialStatus, initialForm }: P
   const [errores, setErrores] = useState<Record<string, string>>({})
   const [mensaje, setMensaje] = useState<string | null>(null)
   const [pendingExportar, startExportar] = useTransition()
+  const [pendingVersion, startVersion] = useTransition()
+
+  // Una vez Pendiente/Aprobada el documento se bloquea: para corregirlo hay que
+  // crear una versión nueva (que lo devuelve a Borrador).
+  const bloqueado = status === 'exportada' || status === 'finalizada'
 
   // Estado local del campo de entrada de conceptos
   const [nuevoConcepto, setNuevoConcepto] = useState('')
@@ -108,6 +115,21 @@ export default function CapturaForm({ initialId, initialStatus, initialForm }: P
     })
   }
 
+  function handleCrearVersion() {
+    if (!id) return
+    setMensaje(null)
+    startVersion(async () => {
+      const res = await crearNuevaVersion(id)
+      if (!res.ok) {
+        setMensaje('error' in res ? res.error : 'No se pudo crear la versión.')
+        return
+      }
+      // El documento vuelve a Borrador y se desbloquea para editar.
+      setStatus('borrador')
+      router.refresh()
+    })
+  }
+
   const err = (k: string) => errores[k]
   const guardando = pendingExportar
 
@@ -122,14 +144,54 @@ export default function CapturaForm({ initialId, initialStatus, initialForm }: P
           <span
             className={
               'rounded-full px-2.5 py-0.5 text-xs font-medium ' +
-              (status === 'exportada'
-                ? 'bg-status-pendiente-bg text-status-pendiente-text'
-                : 'bg-status-borrador-bg text-status-borrador-text')
+              (status === 'finalizada'
+                ? 'bg-status-aprobado-bg text-status-aprobado-text'
+                : status === 'exportada'
+                  ? 'bg-status-pendiente-bg text-status-pendiente-text'
+                  : 'bg-status-borrador-bg text-status-borrador-text')
             }
           >
-            {status === 'exportada' ? 'Exportada' : 'Borrador'}
+            {status === 'finalizada' ? 'Aprobada' : status === 'exportada' ? 'Pendiente' : 'Borrador'}
           </span>
         </div>
+
+        {/* Banner de bloqueo: el documento ya no es borrador */}
+        {bloqueado && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+            <p className="text-sm text-amber-900">
+              Este documento está{' '}
+              <span className="font-semibold">
+                {status === 'finalizada' ? 'Aprobada' : 'Pendiente'}
+              </span>
+              . Para modificarlo, crea una nueva versión.
+            </p>
+            <div className="mt-2.5 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={handleCrearVersion}
+                disabled={pendingVersion}
+                className="rounded-lg bg-brand-primary px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-brand-marino-900 disabled:opacity-60"
+              >
+                {pendingVersion ? 'Creando…' : 'Crear nueva versión'}
+              </button>
+              <Link
+                href={`/documentos/${id}/versiones`}
+                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+              >
+                Ver versiones
+              </Link>
+              <a
+                href={`/api/documentos/${id}/pdf`}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+              >
+                Reimprimir PDF
+              </a>
+              {mensaje && <span className="text-sm text-red-600">{mensaje}</span>}
+            </div>
+          </div>
+        )}
 
         {/* Tipo */}
         <div>
@@ -140,8 +202,9 @@ export default function CapturaForm({ initialId, initialStatus, initialForm }: P
                 key={t}
                 type="button"
                 onClick={() => setTipo(t)}
+                disabled={bloqueado}
                 className={
-                  'flex-1 rounded-lg border px-3 py-2 text-sm font-medium capitalize transition ' +
+                  'flex-1 rounded-lg border px-3 py-2 text-sm font-medium capitalize transition disabled:cursor-not-allowed disabled:opacity-60 ' +
                   (form.tipo === t
                     ? 'border-brand-primary bg-brand-primary text-white'
                     : 'border-gray-300 bg-white text-gray-700 hover:border-brand-primary')
@@ -158,12 +221,12 @@ export default function CapturaForm({ initialId, initialStatus, initialForm }: P
           <legend className="text-sm font-semibold text-gray-700">Importador</legend>
           <div>
             <label className={labelCls}>Nombre / razón social</label>
-            <input className={inputCls} value={form.importador.nombre} onChange={(e) => setImportador('nombre', e.target.value)} />
+            <input className={inputCls} disabled={bloqueado} value={form.importador.nombre} onChange={(e) => setImportador('nombre', e.target.value)} />
             {err('importador.nombre') && <p className="mt-1 text-xs text-red-600">{err('importador.nombre')}</p>}
           </div>
           <div>
             <label className={labelCls}>RNC</label>
-            <input className={inputCls} value={form.importador.rnc} onChange={(e) => setImportador('rnc', e.target.value)} />
+            <input className={inputCls} disabled={bloqueado} value={form.importador.rnc} onChange={(e) => setImportador('rnc', e.target.value)} />
             {err('importador.rnc') && <p className="mt-1 text-xs text-red-600">{err('importador.rnc')}</p>}
           </div>
         </fieldset>
@@ -174,27 +237,27 @@ export default function CapturaForm({ initialId, initialStatus, initialForm }: P
             <legend className="col-span-2 text-sm font-semibold text-gray-700">Datos del vehículo</legend>
             <div>
               <label className={labelCls}>Marca</label>
-              <input className={inputCls} value={form.vehiculo.marca} onChange={(e) => setVehiculo('marca', e.target.value)} />
+              <input className={inputCls} disabled={bloqueado} value={form.vehiculo.marca} onChange={(e) => setVehiculo('marca', e.target.value)} />
               {err('vehiculo.marca') && <p className="mt-1 text-xs text-red-600">{err('vehiculo.marca')}</p>}
             </div>
             <div>
               <label className={labelCls}>Modelo</label>
-              <input className={inputCls} value={form.vehiculo.modelo} onChange={(e) => setVehiculo('modelo', e.target.value)} />
+              <input className={inputCls} disabled={bloqueado} value={form.vehiculo.modelo} onChange={(e) => setVehiculo('modelo', e.target.value)} />
               {err('vehiculo.modelo') && <p className="mt-1 text-xs text-red-600">{err('vehiculo.modelo')}</p>}
             </div>
             <div>
               <label className={labelCls}>Año</label>
-              <input className={inputCls} inputMode="numeric" value={form.vehiculo.anio} onChange={(e) => setVehiculo('anio', e.target.value)} />
+              <input className={inputCls} disabled={bloqueado} inputMode="numeric" value={form.vehiculo.anio} onChange={(e) => setVehiculo('anio', e.target.value)} />
               {err('vehiculo.anio') && <p className="mt-1 text-xs text-red-600">{err('vehiculo.anio')}</p>}
             </div>
             <div>
               <label className={labelCls}>Color</label>
-              <input className={inputCls} value={form.vehiculo.color} onChange={(e) => setVehiculo('color', e.target.value)} />
+              <input className={inputCls} disabled={bloqueado} value={form.vehiculo.color} onChange={(e) => setVehiculo('color', e.target.value)} />
               <p className="mt-1 text-[11px] text-gray-400">No aparece en el PDF</p>
             </div>
             <div className="col-span-2">
               <label className={labelCls}>Chasis</label>
-              <input className={inputCls} value={form.vehiculo.chasis} onChange={(e) => setVehiculo('chasis', e.target.value)} />
+              <input className={inputCls} disabled={bloqueado} value={form.vehiculo.chasis} onChange={(e) => setVehiculo('chasis', e.target.value)} />
               {err('vehiculo.chasis') && <p className="mt-1 text-xs text-red-600">{err('vehiculo.chasis')}</p>}
             </div>
           </fieldset>
@@ -203,13 +266,14 @@ export default function CapturaForm({ initialId, initialStatus, initialForm }: P
             <legend className="text-sm font-semibold text-gray-700">Datos del contenedor</legend>
             <div>
               <label className={labelCls}>Número de BL</label>
-              <input className={inputCls} value={form.contenedor.bl} onChange={(e) => setContenedor('bl', e.target.value)} />
+              <input className={inputCls} disabled={bloqueado} value={form.contenedor.bl} onChange={(e) => setContenedor('bl', e.target.value)} />
               {err('contenedor.bl') && <p className="mt-1 text-xs text-red-600">{err('contenedor.bl')}</p>}
             </div>
             <div>
               <label className={labelCls}>Número de contenedor</label>
               <input
                 className={inputCls}
+                disabled={bloqueado}
                 value={form.contenedor.numero_contenedor}
                 onChange={(e) => setContenedor('numero_contenedor', e.target.value)}
               />
@@ -223,7 +287,7 @@ export default function CapturaForm({ initialId, initialStatus, initialForm }: P
         {/* Vencimiento */}
         <div>
           <label className={labelCls}>Fecha de vencimiento de parqueo</label>
-          <input type="date" className={inputCls} value={form.vencimiento_parqueo} onChange={(e) => setVencimiento(e.target.value)} />
+          <input type="date" className={inputCls} disabled={bloqueado} value={form.vencimiento_parqueo} onChange={(e) => setVencimiento(e.target.value)} />
           {err('vencimiento_parqueo') && <p className="mt-1 text-xs text-red-600">{err('vencimiento_parqueo')}</p>}
         </div>
 
@@ -232,6 +296,7 @@ export default function CapturaForm({ initialId, initialStatus, initialForm }: P
           <legend className="text-sm font-semibold text-gray-700">Conceptos</legend>
 
           {/* Entrada */}
+          {!bloqueado && (
           <div className="space-y-1">
             <div className="flex gap-2">
               <input
@@ -260,6 +325,7 @@ export default function CapturaForm({ initialId, initialStatus, initialForm }: P
             </div>
             {errorEntrada && <p className="text-xs text-red-600">{errorEntrada}</p>}
           </div>
+          )}
 
           {/* Lista de conceptos agregados */}
           {form.conceptos.length === 0 ? (
@@ -274,14 +340,16 @@ export default function CapturaForm({ initialId, initialStatus, initialForm }: P
                   <span className="tabular-nums text-sm font-medium text-gray-700">
                     {formatoMoneda(c.monto)}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => eliminarConcepto(i)}
-                    className="text-gray-400 hover:text-red-500 transition-colors"
-                    aria-label={`Eliminar ${c.concepto}`}
-                  >
-                    ✕
-                  </button>
+                  {!bloqueado && (
+                    <button
+                      type="button"
+                      onClick={() => eliminarConcepto(i)}
+                      className="text-gray-400 hover:text-red-500 transition-colors"
+                      aria-label={`Eliminar ${c.concepto}`}
+                    >
+                      ✕
+                    </button>
+                  )}
                 </li>
               ))}
               <li className="flex justify-end bg-gray-50 px-3 py-2">
@@ -296,17 +364,19 @@ export default function CapturaForm({ initialId, initialStatus, initialForm }: P
         </fieldset>
 
         {/* Acciones */}
-        <div className="flex items-center gap-3 border-t border-gray-100 pt-4">
-          <button
-            type="button"
-            onClick={handleExportar}
-            disabled={guardando}
-            className="rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-marino-900 disabled:opacity-60"
-          >
-            {pendingExportar ? 'Exportando…' : 'Exportar PDF'}
-          </button>
-          {mensaje && <span className="text-sm text-gray-500">{mensaje}</span>}
-        </div>
+        {!bloqueado && (
+          <div className="flex items-center gap-3 border-t border-gray-100 pt-4">
+            <button
+              type="button"
+              onClick={handleExportar}
+              disabled={guardando}
+              className="rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-marino-900 disabled:opacity-60"
+            >
+              {pendingExportar ? 'Exportando…' : 'Exportar PDF'}
+            </button>
+            {mensaje && <span className="text-sm text-gray-500">{mensaje}</span>}
+          </div>
+        )}
       </div>
 
       {/* ---- Preview ---- */}

@@ -8,8 +8,9 @@ import type { DocumentoData } from '@/lib/documentos/types'
 // @react-pdf/renderer requiere runtime Node (no Edge).
 export const runtime = 'nodejs'
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
+  const versionId = new URL(req.url).searchParams.get('version')
   const supabase = await createClient()
 
   const { data: doc } = await supabase
@@ -25,9 +26,12 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     .select('data, version_number')
     .eq('document_id', id)
 
-  const { data: version } = doc.current_version_id
-    ? await versionQuery.eq('id', doc.current_version_id).single()
-    : await versionQuery.eq('version_number', 1).single()
+  // ?version=<id> imprime una versión específica (timeline); por defecto la vigente.
+  const { data: version } = versionId
+    ? await versionQuery.eq('id', versionId).single()
+    : doc.current_version_id
+      ? await versionQuery.eq('id', doc.current_version_id).single()
+      : await versionQuery.eq('version_number', 1).single()
 
   if (!version) return new Response('Sin datos', { status: 404 })
 
