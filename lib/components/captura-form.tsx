@@ -23,9 +23,10 @@ type Props = {
   initialForm?: FormState
 }
 
-const inputCls =
-  'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm ' +
+const inputBase =
+  'rounded-lg border border-gray-300 px-3 py-2 text-sm ' +
   'focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary'
+const inputCls = 'w-full ' + inputBase
 const labelCls = 'block text-xs font-medium text-gray-600 mb-1'
 
 export default function CapturaForm({ initialId, initialStatus, initialForm }: Props) {
@@ -235,14 +236,14 @@ export default function CapturaForm({ initialId, initialStatus, initialForm }: P
             <div className="flex gap-2">
               <input
                 ref={refConcepto}
-                className={inputCls + ' flex-1 min-w-0'}
+                className={inputBase + ' flex-1 min-w-0'}
                 placeholder="Nombre del concepto"
                 value={nuevoConcepto}
                 onChange={(e) => { setNuevoConcepto(e.target.value); setErrorEntrada(null) }}
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAgregarConcepto() } }}
               />
               <input
-                className={inputCls + ' w-28'}
+                className={inputBase + ' w-28'}
                 inputMode="decimal"
                 placeholder="Monto"
                 value={nuevoMonto}
