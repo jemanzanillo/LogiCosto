@@ -1,31 +1,26 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import LogoutButton from '@/lib/components/logout-button'
+import Sidebar from '@/lib/components/sidebar'
 
 export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name')
-    .eq('id', user.id)
-    .single()
-
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="h-14 flex items-center justify-between px-6 bg-brand-primary text-white shadow-md">
-        <span className="font-bold tracking-wide text-sm">LogiCosto</span>
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-white/80">{profile?.full_name ?? user.email}</span>
-          <LogoutButton />
-        </div>
-      </header>
-      <main className="flex-1 p-6 max-w-7xl mx-auto w-full">
-        {children}
-      </main>
+    <div className="flex h-screen overflow-hidden bg-gray-50">
+      <Sidebar />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <header className="h-14 shrink-0 flex items-center justify-end px-6 bg-white border-b border-gray-100">
+          <div className="h-8 w-8 rounded-full bg-brand-marino-200 flex items-center justify-center text-brand-marino-800 text-xs font-semibold">
+            {/* Avatar placeholder */}
+          </div>
+        </header>
+        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+      </div>
     </div>
   )
 }
