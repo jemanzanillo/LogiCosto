@@ -14,6 +14,7 @@ import {
 import type { Database } from '@/lib/types/database.types'
 import { formatoMoneda } from '@/lib/pdf/formato'
 import { guardarBorrador, exportar, crearNuevaVersion } from '@/app/(protected)/documentos/actions'
+import { ACCIONES_DISPONIBLES } from '@/lib/auth/permisos'
 import DocumentoPreview from './documento-preview'
 
 type DocStatus = Database['public']['Enums']['document_status']
@@ -22,7 +23,9 @@ type Props = {
   initialId?: string
   initialStatus?: DocStatus
   initialForm?: FormState
-  esTitular?: boolean
+  // Permisos del usuario actual (claves del catálogo). Por defecto: todos
+  // (cubre el caso "documento nuevo" hasta que la página resuelva los reales).
+  permisos?: string[]
 }
 
 const inputBase =
@@ -32,7 +35,13 @@ const inputBase =
 const inputCls = 'w-full ' + inputBase
 const labelCls = 'block text-xs font-medium text-gray-600 mb-1'
 
-export default function CapturaForm({ initialId, initialStatus, initialForm, esTitular = true }: Props) {
+export default function CapturaForm({
+  initialId,
+  initialStatus,
+  initialForm,
+  permisos = ACCIONES_DISPONIBLES,
+}: Props) {
+  const tiene = (a: string) => permisos.includes(a)
   const router = useRouter()
   const [form, setForm] = useState<FormState>(initialForm ?? formStateVacio())
   const [id, setId] = useState<string | undefined>(initialId)
@@ -167,7 +176,7 @@ export default function CapturaForm({ initialId, initialStatus, initialForm, esT
               . Para modificarlo, crea una nueva versión.
             </p>
             <div className="mt-2.5 flex flex-wrap items-center gap-2">
-              {esTitular && (
+              {tiene('documento.version_crear') && (
                 <button
                   type="button"
                   onClick={handleCrearVersion}
@@ -367,7 +376,7 @@ export default function CapturaForm({ initialId, initialStatus, initialForm, esT
         </fieldset>
 
         {/* Acciones */}
-        {!bloqueado && (
+        {!bloqueado && tiene('documento.exportar') && (
           <div className="flex items-center gap-3 border-t border-gray-100 pt-4">
             <button
               type="button"

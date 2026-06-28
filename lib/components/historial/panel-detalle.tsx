@@ -25,10 +25,11 @@ function fmt(iso: string | null | undefined) {
 type Props = {
   doc: DocumentoFila
   onCerrar: () => void
-  esTitular: boolean
+  permisos: string[]
 }
 
-export default function PanelDetalle({ doc, onCerrar, esTitular }: Props) {
+export default function PanelDetalle({ doc, onCerrar, permisos }: Props) {
+  const tiene = (a: string) => permisos.includes(a)
   const estado = estadoUI(doc)
   const router = useRouter()
   const [pendiente, startTransition] = useTransition()
@@ -235,20 +236,22 @@ export default function PanelDetalle({ doc, onCerrar, esTitular }: Props) {
           >
             Reimprimir PDF
           </Link>
-          <button
-            onClick={handleDuplicar}
-            disabled={pendiente}
-            className="rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            Duplicar
-          </button>
+          {tiene('documento.duplicar') && (
+            <button
+              onClick={handleDuplicar}
+              disabled={pendiente}
+              className="rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              Duplicar
+            </button>
+          )}
           <Link
             href={`/documentos/${doc.id}/versiones`}
             className="flex items-center justify-center rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
           >
             Ver versiones
           </Link>
-          {esTitular && (
+          {tiene('documento.eliminar') && (
             <button
               onClick={() => { setError(null); setConfirmarEliminar(true) }}
               disabled={pendiente}

@@ -1,7 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient, hasServiceRole } from '@/lib/supabase/admin'
 import UsuariosPanel from '@/lib/components/ajustes/usuarios-panel'
+import PermisosPanel from '@/lib/components/ajustes/permisos-panel'
 import type { UsuarioFila } from '@/lib/components/ajustes/types'
+import { DEFAULT_PERMISOS, ROLES_CONFIGURABLES } from '@/lib/auth/permisos'
 
 export default async function AjustesPage() {
   const supabase = await createClient()
@@ -39,8 +41,23 @@ export default async function AjustesPage() {
     email: emailPorId.get(p.id) ?? null,
   }))
 
+  // Permisos vigentes por rol configurable (RLS limita a la propia org).
+  // Si un rol no tiene filas, se muestran los defaults hasta el primer guardado.
+  const { data: permRows } = await supabase
+    .from('role_permissions')
+    .select('role, action, allowed')
+
+  const permisos: Record<string, string[]> = {}
+  for (const r of ROLES_CONFIGURABLES) {
+    const filas = (permRows ?? []).filter((p) => p.role === r)
+    permisos[r] =
+      filas.length === 0
+        ? [...DEFAULT_PERMISOS[r]]
+        : filas.filter((p) => p.allowed).map((p) => p.action)
+  }
+
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-8">
       <div>
         <h1 className="text-xl font-semibold text-gray-900">Ajustes</h1>
         <p className="mt-1 text-sm text-gray-500">Configuración del equipo y la cuenta.</p>
@@ -49,6 +66,12 @@ export default async function AjustesPage() {
       <UsuariosPanel
         usuarios={usuarios}
         currentUserId={user?.id ?? ''}
+        serviceRoleConfigurado={serviceRoleConfigurado}
+        esTitular={esTitular}
+      />
+
+      <PermisosPanel
+        permisos={permisos}
         serviceRoleConfigurado={serviceRoleConfigurado}
         esTitular={esTitular}
       />

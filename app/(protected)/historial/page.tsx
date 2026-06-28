@@ -6,6 +6,7 @@ import FiltrosHistorial from '@/lib/components/historial/filtros-historial'
 import type { DocumentoFila } from '@/lib/components/historial/types'
 import { estadoUIaDB } from '@/lib/components/historial/types'
 import type { DocumentoData } from '@/lib/documentos/types'
+import { resolverPermisos } from '@/lib/auth/permisos'
 
 const PAGE_SIZE = 10
 
@@ -27,9 +28,11 @@ export default async function HistorialPage({ searchParams }: { searchParams: Se
     data: { user },
   } = await supabase.auth.getUser()
   const { data: miPerfil } = user
-    ? await supabase.from('profiles').select('role').eq('id', user.id).single()
+    ? await supabase.from('profiles').select('role, org_id').eq('id', user.id).single()
     : { data: null }
-  const esTitular = miPerfil?.role === 'titular'
+  const permisos = miPerfil
+    ? Array.from(await resolverPermisos(supabase, miPerfil.role, miPerfil.org_id))
+    : []
 
   // Construir la query con filtros
   let query = supabase
@@ -135,7 +138,7 @@ export default async function HistorialPage({ searchParams }: { searchParams: Se
           total={count ?? 0}
           page={page}
           pageSize={PAGE_SIZE}
-          esTitular={esTitular}
+          permisos={permisos}
         />
       </Suspense>
     </div>

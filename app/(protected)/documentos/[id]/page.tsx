@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { formStateDesdeData, type DocumentoData } from '@/lib/documentos/types'
+import { resolverPermisos } from '@/lib/auth/permisos'
 import CapturaForm from '@/lib/components/captura-form'
 
 export default async function EditarDocumentoPage({
@@ -15,9 +16,11 @@ export default async function EditarDocumentoPage({
     data: { user },
   } = await supabase.auth.getUser()
   const { data: miPerfil } = user
-    ? await supabase.from('profiles').select('role').eq('id', user.id).single()
+    ? await supabase.from('profiles').select('role, org_id').eq('id', user.id).single()
     : { data: null }
-  const esTitular = miPerfil?.role === 'titular'
+  const permisos = miPerfil
+    ? Array.from(await resolverPermisos(supabase, miPerfil.role, miPerfil.org_id))
+    : []
 
   const { data: doc } = await supabase
     .from('documents')
@@ -41,5 +44,5 @@ export default async function EditarDocumentoPage({
 
   const form = formStateDesdeData(version.data as unknown as DocumentoData)
 
-  return <CapturaForm initialId={doc.id} initialStatus={doc.status} initialForm={form} esTitular={esTitular} />
+  return <CapturaForm initialId={doc.id} initialStatus={doc.status} initialForm={form} permisos={permisos} />
 }

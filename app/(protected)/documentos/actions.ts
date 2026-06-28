@@ -4,6 +4,18 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { armarData, validar, type FormState, type ErroresValidacion } from '@/lib/documentos/types'
 import type { Json } from '@/lib/types/database.types'
+import { puede, type Accion } from '@/lib/auth/permisos'
+
+// Atajo de enforcement: resuelve el permiso del usuario actual y devuelve un
+// error uniforme si no lo tiene. El titular siempre pasa (ver resolverPermisos).
+async function exigir(
+  ctx: { supabase: Awaited<ReturnType<typeof createClient>>; profile: { org_id: string; role: string } },
+  accion: Accion,
+  mensaje: string,
+): Promise<{ ok: false; error: string } | null> {
+  const ok = await puede(ctx.supabase, ctx.profile.role, ctx.profile.org_id, accion)
+  return ok ? null : { ok: false, error: mensaje }
+}
 
 type GuardarResult =
   | { ok: true; id: string }
@@ -40,6 +52,13 @@ export async function guardarBorrador(form: FormState, id?: string): Promise<Gua
   const ctx = await getPerfil()
   if (!ctx) return { ok: false, error: 'Sesión no válida.' }
   const { supabase, profile } = ctx
+
+  const denegado = await exigir(
+    ctx,
+    id ? 'documento.editar' : 'documento.crear',
+    id ? 'No tienes permiso para editar documentos.' : 'No tienes permiso para crear documentos.',
+  )
+  if (denegado) return denegado
 
   const data = armarData(form)
   const dataJson = data as unknown as Json
@@ -130,6 +149,9 @@ export async function exportar(id: string): Promise<ExportarResult> {
   if (!ctx) return { ok: false, error: 'Sesión no válida.' }
   const { supabase, profile } = ctx
 
+  const denegado = await exigir(ctx, 'documento.exportar', 'No tienes permiso para exportar documentos.')
+  if (denegado) return denegado
+
   const { error } = await supabase
     .from('documents')
     .update({ status: 'exportada', updated_at: new Date().toISOString() })
@@ -156,7 +178,9 @@ export async function crearNuevaVersion(id: string, nota?: string): Promise<Guar
   const ctx = await getPerfil()
   if (!ctx) return { ok: false, error: 'Sesión no válida.' }
   const { supabase, profile } = ctx
-  if (profile.role !== 'titular') return { ok: false, error: 'Solo el titular puede crear una nueva versión.' }
+
+  const denegado = await exigir(ctx, 'documento.version_crear', 'No tienes permiso para crear una nueva versión.')
+  if (denegado) return denegado
 
   const { data: doc, error: docErr } = await supabase
     .from('documents')
@@ -225,7 +249,9 @@ export async function marcarAprobada(id: string): Promise<ExportarResult> {
   const ctx = await getPerfil()
   if (!ctx) return { ok: false, error: 'Sesión no válida.' }
   const { supabase, profile } = ctx
-  if (profile.role !== 'titular') return { ok: false, error: 'Solo el titular puede aprobar documentos.' }
+
+  const denegado = await exigir(ctx, 'documento.aprobar', 'No tienes permiso para aprobar documentos.')
+  if (denegado) return denegado
 
   const { error } = await supabase
     .from('documents')
@@ -251,7 +277,9 @@ export async function revertirPendiente(id: string): Promise<ExportarResult> {
   const ctx = await getPerfil()
   if (!ctx) return { ok: false, error: 'Sesión no válida.' }
   const { supabase, profile } = ctx
-  if (profile.role !== 'titular') return { ok: false, error: 'Solo el titular puede revertir el estado.' }
+
+  const denegado = await exigir(ctx, 'documento.revertir', 'No tienes permiso para revertir el estado.')
+  if (denegado) return denegado
 
   const { error } = await supabase
     .from('documents')
@@ -279,6 +307,9 @@ export async function duplicarDocumento(id: string): Promise<GuardarResult> {
   const ctx = await getPerfil()
   if (!ctx) return { ok: false, error: 'Sesión no válida.' }
   const { supabase, profile } = ctx
+
+  const denegado = await exigir(ctx, 'documento.duplicar', 'No tienes permiso para duplicar documentos.')
+  if (denegado) return denegado
 
   const { data: orig, error: origErr } = await supabase
     .from('documents')
@@ -344,7 +375,9 @@ export async function eliminarDocumento(id: string): Promise<ExportarResult> {
   const ctx = await getPerfil()
   if (!ctx) return { ok: false, error: 'Sesión no válida.' }
   const { supabase, profile } = ctx
-  if (profile.role !== 'titular') return { ok: false, error: 'Solo el titular puede eliminar documentos.' }
+
+  const denegado = await exigir(ctx, 'documento.eliminar', 'No tienes permiso para eliminar documentos.')
+  if (denegado) return denegado
 
   const { data: doc } = await supabase
     .from('documents')

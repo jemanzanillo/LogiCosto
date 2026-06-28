@@ -31,7 +31,7 @@ type Props = {
   estadoActual: EstadoUI
   currentVersionId: string | null
   versiones: VersionFila[]
-  esTitular: boolean
+  permisos: string[]
 }
 
 function fmtFechaHora(iso: string) {
@@ -50,8 +50,9 @@ export default function TimelineVersiones({
   estadoActual,
   currentVersionId,
   versiones,
-  esTitular,
+  permisos,
 }: Props) {
+  const tiene = (a: string) => permisos.includes(a)
   const router = useRouter()
   const [pendiente, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -98,7 +99,7 @@ export default function TimelineVersiones({
 
   return (
     <div className="space-y-4">
-      {esTitular && (
+      {tiene('documento.version_crear') && (
         <div className="flex items-center justify-end">
           <button
             type="button"
@@ -181,12 +182,12 @@ export default function TimelineVersiones({
 
                 {/* Acciones */}
                 <div className="mt-3 flex flex-wrap items-center gap-2">
-                  {esActual && status === 'exportada' && esTitular && (
+                  {esActual && status === 'exportada' && tiene('documento.aprobar') && (
                     <button type="button" onClick={handleAprobar} disabled={pendiente} className={btnPrimario}>
                       Marcar como aprobada
                     </button>
                   )}
-                  {esActual && status === 'finalizada' && esTitular && (
+                  {esActual && status === 'finalizada' && tiene('documento.revertir') && (
                     <button type="button" onClick={handleRevertir} disabled={pendiente} className={btnSecundario}>
                       Revertir a pendiente
                     </button>

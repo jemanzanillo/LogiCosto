@@ -6,6 +6,7 @@ import TimelineVersiones, {
 } from '@/lib/components/historial/timeline-versiones'
 import { estadoUI, ESTADO_LABEL, ESTADO_CLASE, type EstadoUI } from '@/lib/components/historial/types'
 import type { DocumentoData } from '@/lib/documentos/types'
+import { resolverPermisos } from '@/lib/auth/permisos'
 
 const CICLO: EstadoUI[] = ['borrador', 'pendiente', 'aprobada']
 
@@ -21,9 +22,11 @@ export default async function VersionesPage({
     data: { user },
   } = await supabase.auth.getUser()
   const { data: miPerfil } = user
-    ? await supabase.from('profiles').select('role').eq('id', user.id).single()
+    ? await supabase.from('profiles').select('role, org_id').eq('id', user.id).single()
     : { data: null }
-  const esTitular = miPerfil?.role === 'titular'
+  const permisos = miPerfil
+    ? Array.from(await resolverPermisos(supabase, miPerfil.role, miPerfil.org_id))
+    : []
 
   const { data: doc } = await supabase
     .from('documents')
@@ -113,7 +116,7 @@ export default async function VersionesPage({
         estadoActual={estadoActual}
         currentVersionId={doc.current_version_id}
         versiones={versiones}
-        esTitular={esTitular}
+        permisos={permisos}
       />
     </div>
   )
