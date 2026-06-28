@@ -37,7 +37,6 @@ export default function CapturaForm({ initialId, initialStatus, initialForm }: P
   const [status, setStatus] = useState<DocStatus>(initialStatus ?? 'borrador')
   const [errores, setErrores] = useState<Record<string, string>>({})
   const [mensaje, setMensaje] = useState<string | null>(null)
-  const [pendingGuardar, startGuardar] = useTransition()
   const [pendingExportar, startExportar] = useTransition()
 
   const data = useMemo(() => armarData(form), [form])
@@ -78,26 +77,6 @@ export default function CapturaForm({ initialId, initialStatus, initialForm }: P
   }
 
   // ---- acciones ----
-  function handleGuardar() {
-    setMensaje(null)
-    const errs = validar(form)
-    setErrores(errs)
-    if (Object.keys(errs).length > 0) return
-
-    startGuardar(async () => {
-      const res = await guardarBorrador(form, id)
-      if (!res.ok) {
-        if ('errores' in res) setErrores(res.errores)
-        else setMensaje(res.error)
-        return
-      }
-      const nuevo = !id
-      setId(res.id)
-      setMensaje('Borrador guardado.')
-      if (nuevo) router.replace(`/documentos/${res.id}`)
-    })
-  }
-
   function handleExportar() {
     setMensaje(null)
     const errs = validar(form)
@@ -128,7 +107,7 @@ export default function CapturaForm({ initialId, initialStatus, initialForm }: P
   }
 
   const err = (k: string) => errores[k]
-  const guardando = pendingGuardar || pendingExportar
+  const guardando = pendingExportar
 
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
@@ -294,14 +273,6 @@ export default function CapturaForm({ initialId, initialStatus, initialForm }: P
 
         {/* Acciones */}
         <div className="flex items-center gap-3 border-t border-gray-100 pt-4">
-          <button
-            type="button"
-            onClick={handleGuardar}
-            disabled={guardando}
-            className="rounded-lg border border-brand-primary px-4 py-2 text-sm font-semibold text-brand-primary transition hover:bg-brand-marino-50 disabled:opacity-60"
-          >
-            {pendingGuardar ? 'Guardando…' : 'Guardar borrador'}
-          </button>
           <button
             type="button"
             onClick={handleExportar}
