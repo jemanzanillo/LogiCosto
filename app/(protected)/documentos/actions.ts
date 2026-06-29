@@ -44,10 +44,22 @@ async function getPerfil() {
 }
 
 // Crea (o actualiza) un documento en estado borrador con su versión 1.
-// En Rev 1 no se crean versiones nuevas al editar (eso es Rev 2): se reescribe v1.
-export async function guardarBorrador(form: FormState, id?: string): Promise<GuardarResult> {
-  const errores = validar(form)
-  if (Object.keys(errores).length > 0) return { ok: false, errores }
+// `opts.parcial` = guardado parcial (autosave / "Guardar borrador"): no exige el
+// formulario completo, solo un nombre de importador, para que el trabajo no se
+// pierda ante una interrupción. La validación completa se aplica al exportar.
+export async function guardarBorrador(
+  form: FormState,
+  id?: string,
+  opts?: { parcial?: boolean },
+): Promise<GuardarResult> {
+  if (opts?.parcial) {
+    if (!form.importador.nombre.trim()) {
+      return { ok: false, error: 'Escribe al menos el nombre del importador para guardar.' }
+    }
+  } else {
+    const errores = validar(form)
+    if (Object.keys(errores).length > 0) return { ok: false, errores }
+  }
 
   const ctx = await getPerfil()
   if (!ctx) return { ok: false, error: 'Sesión no válida.' }

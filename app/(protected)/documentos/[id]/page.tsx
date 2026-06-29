@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { formStateDesdeData, type DocumentoData } from '@/lib/documentos/types'
 import { resolverPermisos } from '@/lib/auth/permisos'
+import { obtenerSugerencias } from '@/lib/documentos/sugerencias'
 import CapturaForm from '@/lib/components/captura-form'
 
 export default async function EditarDocumentoPage({
@@ -44,5 +45,16 @@ export default async function EditarDocumentoPage({
 
   const form = formStateDesdeData(version.data as unknown as DocumentoData)
 
-  return <CapturaForm initialId={doc.id} initialStatus={doc.status} initialForm={form} permisos={permisos} />
+  const { importadores, conceptosFrecuentes } = await obtenerSugerencias(supabase)
+
+  return (
+    <CapturaForm
+      initialId={doc.id}
+      initialStatus={doc.status}
+      initialForm={form}
+      permisos={permisos}
+      importadores={importadores}
+      conceptosFrecuentes={conceptosFrecuentes}
+    />
+  )
 }

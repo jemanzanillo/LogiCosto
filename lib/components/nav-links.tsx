@@ -15,7 +15,10 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 
-type Item = { href: string; label: string; icon: LucideIcon }
+// `proximamente`: la sección está en la hoja de ruta del menú pero su página
+// aún no existe. Se muestra (para fijar expectativa) pero NO enlaza, para evitar
+// que el usuario caiga en un 404 desde un ítem visible del menú.
+type Item = { href: string; label: string; icon: LucideIcon; proximamente?: boolean }
 
 const GRUPOS: { label: string; items: Item[] }[] = [
   {
@@ -29,9 +32,9 @@ const GRUPOS: { label: string; items: Item[] }[] = [
   {
     label: 'GESTIÓN',
     items: [
-      { href: '/importadores', label: 'Importadores', icon: Building2 },
-      { href: '/conceptos', label: 'Conceptos frecuentes', icon: ListChecks },
-      { href: '/respaldo', label: 'Respaldo', icon: FileSpreadsheet },
+      { href: '/importadores', label: 'Importadores', icon: Building2, proximamente: true },
+      { href: '/conceptos', label: 'Conceptos frecuentes', icon: ListChecks, proximamente: true },
+      { href: '/respaldo', label: 'Respaldo', icon: FileSpreadsheet, proximamente: true },
       { href: '/auditoria', label: 'Auditoría', icon: ShieldCheck },
     ],
   },
@@ -39,7 +42,7 @@ const GRUPOS: { label: string; items: Item[] }[] = [
     label: 'SISTEMA',
     items: [
       { href: '/ajustes', label: 'Ajustes', icon: Settings },
-      { href: '/ayuda', label: 'Ayuda', icon: CircleHelp },
+      { href: '/ayuda', label: 'Ayuda', icon: CircleHelp, proximamente: true },
     ],
   },
 ]
@@ -55,7 +58,7 @@ export default function NavLinks() {
             {grupo.label}
           </p>
           <ul className="space-y-0.5">
-            {grupo.items.map(({ href, label, icon: Icon }) => {
+            {grupo.items.map(({ href, label, icon: Icon, proximamente }) => {
               // Las páginas de un documento existente (/documentos/[id], .../versiones)
               // cuelgan del Historial; "Nueva factura" solo se activa en /documentos/nuevo.
               const enDocumentoExistente =
@@ -64,6 +67,27 @@ export default function NavLinks() {
                 pathname === href ||
                 pathname.startsWith(href + '/') ||
                 (href === '/historial' && enDocumentoExistente)
+
+              // Ítem aún sin página: se muestra deshabilitado con etiqueta "Pronto"
+              // (no enlaza, para no caer en un 404).
+              if (proximamente) {
+                return (
+                  <li key={href}>
+                    <div
+                      aria-disabled="true"
+                      title="Próximamente"
+                      className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-display text-text-primary/35 cursor-not-allowed select-none"
+                    >
+                      <Icon size={18} className="shrink-0 text-text-tertiary" />
+                      <span>{label}</span>
+                      <span className="ml-auto rounded-full bg-surface-sunken px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-text-tertiary">
+                        Pronto
+                      </span>
+                    </div>
+                  </li>
+                )
+              }
+
               return (
                 <li key={href}>
                   <Link

@@ -10,16 +10,18 @@ export default function PasoTipo({ onElegir }: { onElegir: (tipo: DocumentoTipo)
       <h1 className="font-display text-3xl font-semibold text-text-primary">
         Elija el tipo de factura
       </h1>
+      {/* Vehículo primero: es el tipo más frecuente del negocio (importación
+          vehicular) → recibe el anclaje y la mayor atención (posición izquierda). */}
       <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2">
-        <Tarjeta
-          icono={<Container size={34} className="text-category-contenedor-dot" />}
-          label="Contenedor"
-          onClick={() => onElegir('contenedor')}
-        />
         <Tarjeta
           icono={<Car size={34} className="text-action-primary" />}
           label="Vehículo"
           onClick={() => onElegir('vehiculo')}
+        />
+        <Tarjeta
+          icono={<Container size={34} className="text-category-contenedor-dot" />}
+          label="Contenedor"
+          onClick={() => onElegir('contenedor')}
         />
       </div>
     </div>

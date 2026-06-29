@@ -2,7 +2,12 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { formStateVacio, type DocumentoTipo, type FormState } from '@/lib/documentos/types'
+import {
+  formStateVacio,
+  type DocumentoTipo,
+  type FormState,
+  type Importador,
+} from '@/lib/documentos/types'
 import CapturaForm from '@/lib/components/captura-form'
 import EncabezadoFlujo, { type PasoFlujo } from './encabezado-flujo'
 import PasoTipo from './paso-tipo'
@@ -13,9 +18,13 @@ import PasoOrigen, { type FacturaPrevia } from './paso-origen'
 export default function NuevaFacturaWizard({
   recientes,
   permisos,
+  importadores,
+  conceptosFrecuentes,
 }: {
   recientes: FacturaPrevia[]
   permisos: string[]
+  importadores: Importador[]
+  conceptosFrecuentes: string[]
 }) {
   const router = useRouter()
   const [paso, setPaso] = useState<PasoFlujo>('tipo')
@@ -61,7 +70,13 @@ export default function NuevaFacturaWizard({
       )}
 
       {paso === 'datos' && form && (
-        <CapturaForm key={tipo} initialForm={form} permisos={permisos} />
+        <CapturaForm
+          key={tipo}
+          initialForm={form}
+          permisos={permisos}
+          importadores={importadores}
+          conceptosFrecuentes={conceptosFrecuentes}
+        />
       )}
     </div>
   )

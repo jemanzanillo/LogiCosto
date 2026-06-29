@@ -1,16 +1,16 @@
 'use client'
 
-import { useMemo, useRef, useState, useTransition } from 'react'
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { X } from 'lucide-react'
+import { X, Check, Loader2 } from 'lucide-react'
 import {
   armarData,
   validar,
   formStateVacio,
   calcularTotal,
   type FormState,
-  type DocumentoTipo,
+  type Importador,
 } from '@/lib/documentos/types'
 import type { Database } from '@/lib/types/database.types'
 import { formatoMoneda } from '@/lib/pdf/formato'
@@ -27,6 +27,9 @@ type Props = {
   // Permisos del usuario actual (claves del catálogo). Por defecto: todos
   // (cubre el caso "documento nuevo" hasta que la página resuelva los reales).
   permisos?: string[]
+  // Presets de importador y conceptos frecuentes derivados del historial.
+  importadores?: Importador[]
+  conceptosFrecuentes?: string[]
 }
 
 const inputBase =
@@ -41,36 +44,109 @@ export default function CapturaForm({
   initialStatus,
   initialForm,
   permisos = ACCIONES_DISPONIBLES,
+  importadores = [],
+  conceptosFrecuentes = [],
 }: Props) {
   const tiene = (a: string) => permisos.includes(a)
   const router = useRouter()
   const [form, setForm] = useState<FormState>(initialForm ?? formStateVacio())
   const [id, setId] = useState<string | undefined>(initialId)
+  // idRef sigue al id sin disparar el efecto de autosave (evita guardados en bucle).
+  const idRef = useRef<string | undefined>(initialId)
+  function setDocId(v: string) {
+    idRef.current = v
+    setId(v)
+  }
   const [status, setStatus] = useState<DocStatus>(initialStatus ?? 'borrador')
   const [errores, setErrores] = useState<Record<string, string>>({})
   const [mensaje, setMensaje] = useState<string | null>(null)
   const [pendingExportar, startExportar] = useTransition()
   const [pendingVersion, startVersion] = useTransition()
+  const [pendingGuardar, startGuardar] = useTransition()
+  // Indicador de autosave: idle | guardando | guardado.
+  const [autosave, setAutosave] = useState<'idle' | 'guardando' | 'guardado'>('idle')
 
   // Una vez Pendiente/Aprobada el documento se bloquea: para corregirlo hay que
   // crear una versión nueva (que lo devuelve a Borrador).
   const bloqueado = status === 'exportada' || status === 'finalizada'
+  const puedeGuardarBorrador = tiene('documento.crear') || tiene('documento.editar')
 
   // Estado local del campo de entrada de conceptos
   const [nuevoConcepto, setNuevoConcepto] = useState('')
   const [nuevoMonto, setNuevoMonto] = useState('')
   const [errorEntrada, setErrorEntrada] = useState<string | null>(null)
   const refConcepto = useRef<HTMLInputElement>(null)
+  const refMonto = useRef<HTMLInputElement>(null)
 
   const data = useMemo(() => armarData(form), [form])
   const total = calcularTotal(form.conceptos)
 
-  // ---- updaters ----
-  function setTipo(tipo: DocumentoTipo) {
-    setForm((f) => ({ ...f, tipo }))
+  // ---- Autosave (red de seguridad ante interrupciones) ----
+  // Tras una pausa al escribir, guarda el borrador parcial (sin exigir el
+  // formulario completo). No corre en documentos bloqueados ni en el primer
+  // render (evita guardar un formulario sembrado sin que el usuario lo edite).
+  const primerRender = useRef(true)
+  useEffect(() => {
+    if (primerRender.current) {
+      primerRender.current = false
+      return
+    }
+    if (bloqueado || !puedeGuardarBorrador) return
+    if (!form.importador.nombre.trim()) return
+
+    setAutosave('guardando')
+    const t = setTimeout(async () => {
+      const res = await guardarBorrador(form, idRef.current, { parcial: true })
+      if (res.ok) {
+        setDocId(res.id)
+        setAutosave('guardado')
+      } else {
+        setAutosave('idle')
+      }
+    }, 1200)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form, bloqueado])
+
+  function handleGuardarBorrador() {
+    if (!form.importador.nombre.trim()) {
+      setMensaje('Escribe al menos el nombre del importador para guardar el borrador.')
+      return
+    }
+    setMensaje(null)
+    startGuardar(async () => {
+      const res = await guardarBorrador(form, idRef.current, { parcial: true })
+      if (res.ok) {
+        setDocId(res.id)
+        setAutosave('guardado')
+      } else {
+        setMensaje('error' in res ? res.error : 'No se pudo guardar el borrador.')
+      }
+    })
   }
+
+  // ---- updaters ----
   function setImportador(campo: 'nombre' | 'rnc', valor: string) {
     setForm((f) => ({ ...f, importador: { ...f.importador, [campo]: valor } }))
+  }
+  // Nombre del importador con autocompletado de presets: si el nombre coincide
+  // con un preset del historial, rellena el RNC automáticamente.
+  function setNombreImportador(valor: string) {
+    const preset = importadores.find(
+      (i) => i.nombre.trim().toLowerCase() === valor.trim().toLowerCase(),
+    )
+    setForm((f) => ({
+      ...f,
+      importador: {
+        nombre: valor,
+        rnc: preset && preset.rnc ? preset.rnc : f.importador.rnc,
+      },
+    }))
+  }
+  function elegirConceptoFrecuente(nombre: string) {
+    setNuevoConcepto(nombre)
+    setErrorEntrada(null)
+    refMonto.current?.focus()
   }
   function setVehiculo(campo: keyof FormState['vehiculo'], valor: string) {
     setForm((f) => ({ ...f, vehiculo: { ...f.vehiculo, [campo]: valor } }))
@@ -112,7 +188,7 @@ export default function CapturaForm({
         return
       }
       const docId = guardado.id
-      setId(docId)
+      setDocId(docId)
 
       const exp = await exportar(docId)
       if (!exp.ok) {
@@ -206,35 +282,27 @@ export default function CapturaForm({
           </div>
         )}
 
-        {/* Tipo */}
-        <div>
-          <span className={labelCls}>Tipo de documento</span>
-          <div className="flex gap-2">
-            {(['vehiculo', 'contenedor'] as DocumentoTipo[]).map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setTipo(t)}
-                disabled={bloqueado}
-                className={
-                  'flex-1 rounded-lg border px-3 py-2 text-sm font-display font-medium capitalize transition disabled:cursor-not-allowed disabled:opacity-60 ' +
-                  (form.tipo === t
-                    ? 'border-action-primary bg-action-primary text-white'
-                    : 'border-border-strong bg-surface-raised text-text-secondary hover:border-action-primary')
-                }
-              >
-                {t === 'vehiculo' ? 'Vehículo' : 'Contenedor'}
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* Importador */}
         <fieldset className="space-y-3">
           <legend className="font-display text-sm font-semibold text-text-primary">Importador</legend>
           <div>
             <label className={labelCls}>Nombre / razón social</label>
-            <input className={inputCls} disabled={bloqueado} value={form.importador.nombre} onChange={(e) => setImportador('nombre', e.target.value)} />
+            <input
+              className={inputCls}
+              disabled={bloqueado}
+              list="presets-importadores"
+              autoComplete="off"
+              placeholder={importadores.length ? 'Escribe o elige un importador frecuente' : undefined}
+              value={form.importador.nombre}
+              onChange={(e) => setNombreImportador(e.target.value)}
+            />
+            {importadores.length > 0 && (
+              <datalist id="presets-importadores">
+                {importadores.map((imp) => (
+                  <option key={imp.nombre} value={imp.nombre} />
+                ))}
+              </datalist>
+            )}
             {err('importador.nombre') && <p className="mt-1 text-xs text-red-600">{err('importador.nombre')}</p>}
           </div>
           <div>
@@ -300,8 +368,10 @@ export default function CapturaForm({
         {/* Vencimiento */}
         <div>
           <label className={labelCls}>Fecha de vencimiento de parqueo</label>
-          <input type="date" className={inputCls} disabled={bloqueado} value={form.vencimiento_parqueo} onChange={(e) => setVencimiento(e.target.value)} />
-          {err('vencimiento_parqueo') && <p className="mt-1 text-xs text-red-600">{err('vencimiento_parqueo')}</p>}
+          <input type="date" lang="es-DO" className={inputCls} disabled={bloqueado} value={form.vencimiento_parqueo} onChange={(e) => setVencimiento(e.target.value)} />
+          {err('vencimiento_parqueo')
+            ? <p className="mt-1 text-xs text-red-600">{err('vencimiento_parqueo')}</p>
+            : <p className="mt-1 text-[11px] text-text-tertiary">Formato: día / mes / año (DD/MM/AAAA)</p>}
         </div>
 
         {/* Conceptos */}
@@ -310,7 +380,23 @@ export default function CapturaForm({
 
           {/* Entrada */}
           {!bloqueado && (
-          <div className="space-y-1">
+          <div className="space-y-2">
+            {/* Conceptos frecuentes (del historial): un clic los carga listos para
+                escribir el monto. Acelera el momento clave de ingresar costos. */}
+            {conceptosFrecuentes.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {conceptosFrecuentes.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => elegirConceptoFrecuente(c)}
+                    className="rounded-full border border-border bg-surface-raised px-2.5 py-1 text-xs text-text-secondary transition-colors hover:border-action-primary hover:text-action-primary"
+                  >
+                    + {c}
+                  </button>
+                ))}
+              </div>
+            )}
             <div className="flex gap-2">
               <input
                 ref={refConcepto}
@@ -321,6 +407,7 @@ export default function CapturaForm({
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAgregarConcepto() } }}
               />
               <input
+                ref={refMonto}
                 className={inputBase + ' w-28'}
                 inputMode="decimal"
                 placeholder="Monto"
@@ -377,16 +464,38 @@ export default function CapturaForm({
         </fieldset>
 
         {/* Acciones */}
-        {!bloqueado && tiene('documento.exportar') && (
-          <div className="flex items-center gap-3 border-t border-border pt-4">
-            <button
-              type="button"
-              onClick={handleExportar}
-              disabled={guardando}
-              className="rounded-lg bg-action-primary px-4 py-2 text-sm font-display font-semibold text-white transition hover:bg-action-primary-hover disabled:opacity-60"
-            >
-              {pendingExportar ? 'Exportando…' : 'Exportar PDF'}
-            </button>
+        {!bloqueado && (puedeGuardarBorrador || tiene('documento.exportar')) && (
+          <div className="flex flex-wrap items-center gap-3 border-t border-border pt-4">
+            {puedeGuardarBorrador && (
+              <button
+                type="button"
+                onClick={handleGuardarBorrador}
+                disabled={pendingGuardar}
+                className="rounded-lg border border-border bg-surface-raised px-4 py-2 text-sm font-display font-semibold text-text-secondary transition hover:bg-surface-hover disabled:opacity-60"
+              >
+                {pendingGuardar ? 'Guardando…' : 'Guardar borrador'}
+              </button>
+            )}
+            {tiene('documento.exportar') && (
+              <button
+                type="button"
+                onClick={handleExportar}
+                disabled={guardando}
+                className="rounded-lg bg-action-primary px-4 py-2 text-sm font-display font-semibold text-white transition hover:bg-action-primary-hover disabled:opacity-60"
+              >
+                {pendingExportar ? 'Exportando…' : 'Exportar PDF'}
+              </button>
+            )}
+            {autosave === 'guardando' && (
+              <span className="inline-flex items-center gap-1 text-xs text-text-tertiary">
+                <Loader2 size={13} className="animate-spin" /> Guardando…
+              </span>
+            )}
+            {autosave === 'guardado' && (
+              <span className="inline-flex items-center gap-1 text-xs text-text-tertiary">
+                <Check size={13} className="text-status-aprobado-dot" /> Borrador guardado
+              </span>
+            )}
             {mensaje && <span className="text-sm text-text-secondary">{mensaje}</span>}
           </div>
         )}

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { resolverPermisos } from '@/lib/auth/permisos'
+import { obtenerSugerencias } from '@/lib/documentos/sugerencias'
 import type { DocumentoData, DocumentoTipo } from '@/lib/documentos/types'
 import NuevaFacturaWizard from '@/lib/components/nueva-factura/wizard'
 import type { FacturaPrevia } from '@/lib/components/nueva-factura/paso-origen'
@@ -48,5 +49,14 @@ export default async function NuevoDocumentoPage() {
     }
   })
 
-  return <NuevaFacturaWizard recientes={recientes} permisos={permisos} />
+  const { importadores, conceptosFrecuentes } = await obtenerSugerencias(supabase)
+
+  return (
+    <NuevaFacturaWizard
+      recientes={recientes}
+      permisos={permisos}
+      importadores={importadores}
+      conceptosFrecuentes={conceptosFrecuentes}
+    />
+  )
 }

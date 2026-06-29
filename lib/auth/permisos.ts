@@ -116,11 +116,14 @@ export const ROLES_CONFIGURABLES = ['suplente', 'operador'] as const
 export type RolConfigurable = (typeof ROLES_CONFIGURABLES)[number]
 
 // Defaults usados para sembrar la matriz cuando un (rol, acción) no tiene fila.
-// Coinciden con el seed de la migración: todos crean/editan/exportan/duplican;
-// aprobar/revertir/eliminar/crear-versión quedan al titular hasta que lo cambie.
+// PARIDAD por defecto: los roles no-titular arrancan con TODAS las acciones de
+// documento. Es el caso de uso confirmado (UCDC): un solo rol funcional, dos
+// usuarias que "hacen lo mismo" y la suplente cubre cuando la titular no está.
+// El titular puede revocar acciones puntuales en Ajustes (motor configurable
+// que se conserva para escenarios multi-tenant futuros).
 export const DEFAULT_PERMISOS: Record<RolConfigurable, Accion[]> = {
-  suplente: ['documento.crear', 'documento.editar', 'documento.exportar', 'documento.duplicar'],
-  operador: ['documento.crear', 'documento.editar', 'documento.exportar', 'documento.duplicar'],
+  suplente: [...ACCIONES_DISPONIBLES],
+  operador: [...ACCIONES_DISPONIBLES],
 }
 
 type DB = SupabaseClient<Database>
