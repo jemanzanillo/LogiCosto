@@ -100,11 +100,16 @@ export async function guardarBorrador(
 
     // Apuntar a la versión vigente (current_version_id); fallback a la v1 para
     // documentos antiguos creados antes de fijar el puntero.
-    const verUpdate = supabase.from('document_versions').update({ data: dataJson })
-    const { error: verErr } = doc.current_version_id
+    // `.select('id')` permite detectar un update de 0 filas (p. ej. bloqueado por
+    // RLS) y fallar de forma explícita en vez de perder los datos en silencio.
+    const verUpdate = supabase.from('document_versions').update({ data: dataJson }).select('id')
+    const { data: filas, error: verErr } = doc.current_version_id
       ? await verUpdate.eq('id', doc.current_version_id)
       : await verUpdate.eq('document_id', id).eq('version_number', 1)
     if (verErr) return { ok: false, error: verErr.message }
+    if (!filas || filas.length === 0) {
+      return { ok: false, error: 'No se pudo actualizar la versión del documento.' }
+    }
 
     revalidatePath(`/documentos/${id}`)
     revalidatePath('/historial')
