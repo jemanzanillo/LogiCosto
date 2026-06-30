@@ -127,6 +127,38 @@ export function formStateDesdeData(data: DocumentoData): FormState {
   }
 }
 
+// Nomenclatura del PDF exportado.
+// Patrón: LM-Aduanas_{Importador}_{Chasis|BL}[_v2].pdf
+// - "LM-Aduanas" (el gestor) va al inicio para que el importador lo identifique.
+// - Vehículo usa el chasis; contenedor usa el BL (identificadores legales únicos).
+// - La versión solo aparece a partir de la v2.
+export function nombreArchivoPdf(opts: {
+  data: DocumentoData
+  versionNumber: number
+}): string {
+  const { data, versionNumber } = opts
+
+  // Normaliza un token para que sea seguro como nombre de archivo: quita acentos,
+  // colapsa espacios en guiones y elimina caracteres no alfanuméricos.
+  const limpia = (s: string | undefined) =>
+    (s || '')
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-zA-Z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+
+  const importador = limpia(data.importador?.nombre) || 'SinImportador'
+  const identificador =
+    data.tipo === 'vehiculo'
+      ? limpia(data.vehiculo?.chasis) || 'SinChasis'
+      : limpia(data.contenedor?.bl) || 'SinBL'
+
+  const partes = ['LM-Aduanas', importador, identificador]
+  if (versionNumber > 1) partes.push(`v${versionNumber}`)
+
+  return partes.join('_') + '.pdf'
+}
+
 export type ErroresValidacion = Record<string, string>
 
 // Validación compartida (cliente y servidor). Devuelve un mapa campo→mensaje;

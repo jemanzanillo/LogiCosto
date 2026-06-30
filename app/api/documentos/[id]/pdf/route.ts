@@ -3,7 +3,7 @@ import { renderToBuffer, type DocumentProps } from '@react-pdf/renderer'
 import { createClient } from '@/lib/supabase/server'
 import DocumentoPDF from '@/lib/pdf/documento-pdf'
 import { getLogoBase64 } from '@/lib/pdf/logo'
-import type { DocumentoData } from '@/lib/documentos/types'
+import { nombreArchivoPdf, type DocumentoData } from '@/lib/documentos/types'
 
 // @react-pdf/renderer requiere runtime Node (no Edge).
 export const runtime = 'nodejs'
@@ -36,6 +36,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   if (!version) return new Response('Sin datos', { status: 404 })
 
   const data = version.data as unknown as DocumentoData
+
+  const nombreArchivo = nombreArchivoPdf({
+    data,
+    versionNumber: version.version_number,
+  })
+
   const logoBase64 = await getLogoBase64()
 
   const elemento = createElement(DocumentoPDF, {
@@ -50,7 +56,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   return new Response(new Uint8Array(buffer), {
     headers: {
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="LM-Aduanas-${id}.pdf"`,
+      'Content-Disposition': `attachment; filename="${nombreArchivo}"`,
       'Cache-Control': 'no-store',
     },
   })

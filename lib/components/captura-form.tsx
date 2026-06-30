@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { X, Check, Loader2 } from 'lucide-react'
+import { X, Check, Loader2, GripVertical, Pencil } from 'lucide-react'
 import {
   armarData,
   validar,
@@ -14,7 +14,7 @@ import {
 } from '@/lib/documentos/types'
 import type { Database } from '@/lib/types/database.types'
 import { formatoMoneda } from '@/lib/pdf/formato'
-import { guardarBorrador, exportar, crearNuevaVersion } from '@/app/(protected)/documentos/actions'
+import { guardarBorrador, exportar, crearNuevaVersion, marcarAprobada, revertirPendiente } from '@/app/(protected)/documentos/actions'
 import { ACCIONES_DISPONIBLES } from '@/lib/auth/permisos'
 import DocumentoPreview from './documento-preview'
 
@@ -30,6 +30,33 @@ type Props = {
   // Presets de importador y conceptos frecuentes derivados del historial.
   importadores?: Importador[]
   conceptosFrecuentes?: string[]
+}
+
+// Parsea montos con separadores de miles/decimales mixtos.
+// "3,500" → 3500 | "3,50" → 3.50 | "3.500,00" → 3500 | "3,500.00" → 3500
+function parsearMonto(texto: string): number {
+  const s = texto.trim()
+  if (!s) return 0
+  const tieneC = s.includes(',')
+  const tieneP = s.includes('.')
+  if (tieneC && tieneP) {
+    return s.lastIndexOf(',') > s.lastIndexOf('.')
+      ? Number(s.replace(/\./g, '').replace(',', '.'))  // "3.500,00"
+      : Number(s.replace(/,/g, ''))                     // "3,500.00"
+  }
+  if (tieneC) {
+    const partes = s.split(',')
+    return partes.length > 2 || partes[partes.length - 1].length === 3
+      ? Number(s.replace(/,/g, ''))   // "3,500" o "1,000,000"
+      : Number(s.replace(',', '.'))   // "3,50"
+  }
+  if (tieneP) {
+    const partes = s.split('.')
+    return partes.length > 2 || partes[partes.length - 1].length === 3
+      ? Number(s.replace(/\./g, ''))  // "3.500" o "1.000.000"
+      : Number(s)                     // "3.50"
+  }
+  return Number(s)
 }
 
 const inputBase =
@@ -63,6 +90,8 @@ export default function CapturaForm({
   const [pendingExportar, startExportar] = useTransition()
   const [pendingVersion, startVersion] = useTransition()
   const [pendingGuardar, startGuardar] = useTransition()
+  const [pendingAprobar, startAprobar] = useTransition()
+  const [pendingRevertir, startRevertir] = useTransition()
   // Indicador de autosave: idle | guardando | guardado.
   const [autosave, setAutosave] = useState<'idle' | 'guardando' | 'guardado'>('idle')
 
@@ -77,6 +106,13 @@ export default function CapturaForm({
   const [errorEntrada, setErrorEntrada] = useState<string | null>(null)
   const refConcepto = useRef<HTMLInputElement>(null)
   const refMonto = useRef<HTMLInputElement>(null)
+  // Edición en línea de un concepto ya agregado.
+  const [editIdx, setEditIdx] = useState<number | null>(null)
+  const [editConcepto, setEditConcepto] = useState('')
+  const [editMonto, setEditMonto] = useState('')
+  const [errorEdicion, setErrorEdicion] = useState<string | null>(null)
+  // Índice del concepto que se está arrastrando (reordenar por arrastre).
+  const [dragIdx, setDragIdx] = useState<number | null>(null)
 
   const data = useMemo(() => armarData(form), [form])
   const total = calcularTotal(form.conceptos)
@@ -159,7 +195,7 @@ export default function CapturaForm({
   }
   function handleAgregarConcepto() {
     const nombre = nuevoConcepto.trim()
-    const monto = Number(nuevoMonto.replace(',', '.')) || 0
+    const monto = parsearMonto(nuevoMonto)
     if (!nombre) { setErrorEntrada('Escribe el nombre del concepto.'); return }
     if (monto <= 0) { setErrorEntrada('El monto debe ser mayor a 0.'); return }
     setErrorEntrada(null)
@@ -170,6 +206,42 @@ export default function CapturaForm({
   }
   function eliminarConcepto(i: number) {
     setForm((f) => ({ ...f, conceptos: f.conceptos.filter((_, idx) => idx !== i) }))
+    if (editIdx === i) cancelarEdicion()
+  }
+  function iniciarEdicion(i: number) {
+    const c = form.conceptos[i]
+    setEditIdx(i)
+    setEditConcepto(c.concepto)
+    setEditMonto(String(c.monto))
+    setErrorEdicion(null)
+  }
+  function cancelarEdicion() {
+    setEditIdx(null)
+    setEditConcepto('')
+    setEditMonto('')
+    setErrorEdicion(null)
+  }
+  function guardarEdicion() {
+    if (editIdx === null) return
+    const nombre = editConcepto.trim()
+    const monto = parsearMonto(editMonto)
+    if (!nombre) { setErrorEdicion('Escribe el nombre del concepto.'); return }
+    if (monto <= 0) { setErrorEdicion('El monto debe ser mayor a 0.'); return }
+    setForm((f) => ({
+      ...f,
+      conceptos: f.conceptos.map((c, idx) => (idx === editIdx ? { concepto: nombre, monto } : c)),
+    }))
+    cancelarEdicion()
+  }
+  // Reordenar por arrastre: mueve el concepto desde `from` hasta `to`.
+  function reordenarConcepto(from: number, to: number) {
+    if (from === to) return
+    setForm((f) => {
+      const lista = [...f.conceptos]
+      const [movido] = lista.splice(from, 1)
+      lista.splice(to, 0, movido)
+      return { ...f, conceptos: lista }
+    })
   }
 
   // ---- acciones ----
@@ -216,6 +288,24 @@ export default function CapturaForm({
       router.refresh()
     })
   }
+  function handleAprobar() {
+    if (!id) return
+    setMensaje(null)
+    startAprobar(async () => {
+      const res = await marcarAprobada(id)
+      if (!res.ok) { setMensaje('error' in res ? res.error : 'No se pudo aprobar el documento.'); return }
+      setStatus('finalizada')
+    })
+  }
+  function handleRevertirPendiente() {
+    if (!id) return
+    setMensaje(null)
+    startRevertir(async () => {
+      const res = await revertirPendiente(id)
+      if (!res.ok) { setMensaje('error' in res ? res.error : 'No se pudo revertir el documento.'); return }
+      setStatus('exportada')
+    })
+  }
 
   const err = (k: string) => errores[k]
   const guardando = pendingExportar
@@ -253,22 +343,7 @@ export default function CapturaForm({
               . Para modificarlo, crea una nueva versión.
             </p>
             <div className="mt-2.5 flex flex-wrap items-center gap-2">
-              {tiene('documento.version_crear') && (
-                <button
-                  type="button"
-                  onClick={handleCrearVersion}
-                  disabled={pendingVersion}
-                  className="rounded-lg bg-action-primary px-3 py-1.5 text-sm font-display font-semibold text-white transition hover:bg-action-primary-hover disabled:opacity-60"
-                >
-                  {pendingVersion ? 'Creando…' : 'Crear nueva versión'}
-                </button>
-              )}
-              <Link
-                href={`/documentos/${id}/versiones`}
-                className="rounded-lg border border-border bg-surface-raised px-3 py-1.5 text-sm font-display font-medium text-text-secondary transition hover:bg-surface-hover"
-              >
-                Ver versiones
-              </Link>
+              {/* Acción de revisión primero — sin consecuencias, abre en nueva pestaña */}
               <a
                 href={`/api/documentos/${id}/pdf`}
                 target="_blank"
@@ -277,6 +352,63 @@ export default function CapturaForm({
               >
                 Reimprimir PDF
               </a>
+
+              {/* Pendiente: aprobar es la acción principal (único botón primario) */}
+              {status === 'exportada' && tiene('documento.aprobar') && (
+                <button
+                  type="button"
+                  onClick={handleAprobar}
+                  disabled={pendingAprobar}
+                  className="rounded-lg bg-status-aprobado-dot px-3 py-1.5 text-sm font-display font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
+                >
+                  {pendingAprobar ? 'Aprobando…' : 'Aprobar'}
+                </button>
+              )}
+
+              {/* Aprobada: historial antes de corregir */}
+              {status === 'finalizada' && (
+                <Link
+                  href={`/documentos/${id}/versiones`}
+                  className="rounded-lg border border-border bg-surface-raised px-3 py-1.5 text-sm font-display font-medium text-text-secondary transition hover:bg-surface-hover"
+                >
+                  Ver versiones
+                </Link>
+              )}
+
+              {/* Corrección: secundario en ambos estados */}
+              {tiene('documento.version_crear') && (
+                <button
+                  type="button"
+                  onClick={handleCrearVersion}
+                  disabled={pendingVersion}
+                  className="rounded-lg border border-border bg-surface-raised px-3 py-1.5 text-sm font-display font-medium text-text-secondary transition hover:bg-surface-hover disabled:opacity-60"
+                >
+                  {pendingVersion ? 'Creando…' : 'Crear nueva versión'}
+                </button>
+              )}
+
+              {/* Pendiente: historial al final (referencia) */}
+              {status === 'exportada' && (
+                <Link
+                  href={`/documentos/${id}/versiones`}
+                  className="rounded-lg border border-border bg-surface-raised px-3 py-1.5 text-sm font-display font-medium text-text-secondary transition hover:bg-surface-hover"
+                >
+                  Ver versiones
+                </Link>
+              )}
+
+              {/* Aprobada: revertir al final — acción regresiva y poco frecuente */}
+              {status === 'finalizada' && tiene('documento.revertir') && (
+                <button
+                  type="button"
+                  onClick={handleRevertirPendiente}
+                  disabled={pendingRevertir}
+                  className="rounded-lg border border-border bg-surface-raised px-3 py-1.5 text-sm font-display font-medium text-text-secondary transition hover:bg-surface-hover disabled:opacity-60"
+                >
+                  {pendingRevertir ? 'Revirtiendo…' : 'Revertir a pendiente'}
+                </button>
+              )}
+
               {mensaje && <span className="text-sm text-red-600">{mensaje}</span>}
             </div>
           </div>
@@ -435,20 +567,103 @@ export default function CapturaForm({
           ) : (
             <ul className="overflow-hidden rounded-lg border border-border divide-y divide-border/60">
               {form.conceptos.map((c, i) => (
-                <li key={i} className="flex items-center gap-3 bg-surface-raised px-3 py-2.5">
-                  <span className="flex-1 text-sm text-text-primary">{c.concepto}</span>
-                  <span className="tabular-nums text-sm font-medium text-text-secondary">
-                    {formatoMoneda(c.monto)}
-                  </span>
-                  {!bloqueado && (
-                    <button
-                      type="button"
-                      onClick={() => eliminarConcepto(i)}
-                      className="text-text-tertiary hover:text-status-vencida-dot transition-colors"
-                      aria-label={`Eliminar ${c.concepto}`}
-                    >
-                      <X size={16} />
-                    </button>
+                <li
+                  key={i}
+                  onDragOver={(e) => { if (dragIdx !== null) e.preventDefault() }}
+                  onDrop={(e) => {
+                    e.preventDefault()
+                    if (dragIdx !== null) reordenarConcepto(dragIdx, i)
+                    setDragIdx(null)
+                  }}
+                  className={
+                    'flex items-center gap-2 bg-surface-raised px-3 py-2.5 transition-colors ' +
+                    (dragIdx === i ? 'opacity-50 ' : '') +
+                    (dragIdx !== null && dragIdx !== i ? 'border-t-2 border-t-transparent hover:border-t-action-primary ' : '')
+                  }
+                >
+                  {editIdx === i ? (
+                    <div className="flex-1 space-y-2">
+                      <div className="flex gap-2">
+                        <input
+                          autoFocus
+                          className={inputBase + ' flex-1 min-w-0'}
+                          placeholder="Nombre del concepto"
+                          value={editConcepto}
+                          onChange={(e) => { setEditConcepto(e.target.value); setErrorEdicion(null) }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') { e.preventDefault(); guardarEdicion() }
+                            if (e.key === 'Escape') { e.preventDefault(); cancelarEdicion() }
+                          }}
+                        />
+                        <input
+                          className={inputBase + ' w-28'}
+                          inputMode="decimal"
+                          placeholder="Monto"
+                          value={editMonto}
+                          onChange={(e) => { setEditMonto(e.target.value); setErrorEdicion(null) }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') { e.preventDefault(); guardarEdicion() }
+                            if (e.key === 'Escape') { e.preventDefault(); cancelarEdicion() }
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={guardarEdicion}
+                          className="rounded-lg bg-action-primary px-3 py-2 text-sm font-display font-semibold text-white hover:bg-action-primary-hover"
+                          aria-label="Guardar cambios"
+                        >
+                          <Check size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={cancelarEdicion}
+                          className="rounded-lg border border-border px-3 py-2 text-text-tertiary hover:text-text-primary"
+                          aria-label="Cancelar edición"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                      {errorEdicion && <p className="text-xs text-red-600">{errorEdicion}</p>}
+                    </div>
+                  ) : (
+                    <>
+                      {!bloqueado && (
+                        <span
+                          draggable
+                          onDragStart={() => setDragIdx(i)}
+                          onDragEnd={() => setDragIdx(null)}
+                          className="cursor-grab text-text-tertiary hover:text-text-secondary active:cursor-grabbing"
+                          aria-label="Arrastrar para reordenar"
+                          title="Arrastrar para reordenar"
+                        >
+                          <GripVertical size={16} />
+                        </span>
+                      )}
+                      <span className="flex-1 text-sm text-text-primary">{c.concepto}</span>
+                      <span className="tabular-nums text-sm font-medium text-text-secondary">
+                        {formatoMoneda(c.monto)}
+                      </span>
+                      {!bloqueado && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => iniciarEdicion(i)}
+                            className="text-text-tertiary hover:text-action-primary transition-colors"
+                            aria-label={`Editar ${c.concepto}`}
+                          >
+                            <Pencil size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => eliminarConcepto(i)}
+                            className="text-text-tertiary hover:text-status-vencida-dot transition-colors"
+                            aria-label={`Eliminar ${c.concepto}`}
+                          >
+                            <X size={16} />
+                          </button>
+                        </>
+                      )}
+                    </>
                   )}
                 </li>
               ))}
