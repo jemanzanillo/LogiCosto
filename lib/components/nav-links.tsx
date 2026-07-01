@@ -43,7 +43,7 @@ const GRUPOS: { label: string; items: Item[] }[] = [
     label: 'SISTEMA',
     items: [
       { href: '/ajustes', label: 'Ajustes', icon: Settings },
-      { href: '/ayuda', label: 'Ayuda', icon: CircleHelp, proximamente: true },
+      { href: '/ayuda', label: 'Ayuda', icon: CircleHelp },
     ],
   },
 ]
