@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useSidebar } from './sidebar-context'
 import {
   LayoutDashboard,
   FilePlus2,
@@ -47,14 +48,21 @@ const GRUPOS: { label: string; items: Item[] }[] = [
   },
 ]
 
+// Clases que ocultan las etiquetas/encabezados cuando el rail está colapsado en
+// md+ (solo iconos) y las revelan al hacer hover o recibir foco (group-*).
+// En móvil (drawer) siempre visibles.
+const REVEAL = 'md:hidden md:group-hover:inline md:group-focus-within:inline'
+const REVEAL_BLOCK = 'block md:hidden md:group-hover:block md:group-focus-within:block'
+
 export default function NavLinks() {
   const pathname = usePathname()
+  const { closeMobile } = useSidebar()
 
   return (
     <nav className="flex-1 overflow-y-auto py-5 px-3 space-y-6">
       {GRUPOS.map((grupo) => (
         <div key={grupo.label}>
-          <p className="px-3 mb-1.5 text-[11px] font-display font-semibold tracking-wider text-text-tertiary">
+          <p className={'px-3 mb-1.5 text-[11px] font-display font-semibold tracking-wider text-text-tertiary ' + REVEAL_BLOCK}>
             {grupo.label}
           </p>
           <ul className="space-y-0.5">
@@ -75,12 +83,12 @@ export default function NavLinks() {
                   <li key={href}>
                     <div
                       aria-disabled="true"
-                      title="Próximamente"
-                      className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-display text-text-primary/35 cursor-not-allowed select-none"
+                      title={label + ' · Próximamente'}
+                      className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-display text-text-primary/35 cursor-not-allowed select-none md:justify-center md:group-hover:justify-start md:group-focus-within:justify-start"
                     >
                       <Icon size={18} className="shrink-0 text-text-tertiary" />
-                      <span>{label}</span>
-                      <span className="ml-auto rounded-full bg-surface-sunken px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-text-tertiary">
+                      <span className={REVEAL}>{label}</span>
+                      <span className={'ml-auto rounded-full bg-surface-sunken px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-text-tertiary ' + REVEAL}>
                         Pronto
                       </span>
                     </div>
@@ -92,8 +100,10 @@ export default function NavLinks() {
                 <li key={href}>
                   <Link
                     href={href}
+                    title={label}
+                    onClick={closeMobile}
                     className={
-                      'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-display transition-colors ' +
+                      'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-display transition-colors md:justify-center md:group-hover:justify-start md:group-focus-within:justify-start ' +
                       (activo
                         ? 'bg-brand-electrico-50 text-brand-electrico-800 font-medium'
                         : 'text-text-primary/80 hover:bg-surface-hover hover:text-text-primary')
@@ -103,7 +113,7 @@ export default function NavLinks() {
                       size={18}
                       className={'shrink-0 ' + (activo ? 'text-action-primary' : 'text-text-secondary')}
                     />
-                    {label}
+                    <span className={REVEAL}>{label}</span>
                   </Link>
                 </li>
               )
