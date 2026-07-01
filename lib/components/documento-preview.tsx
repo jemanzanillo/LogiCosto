@@ -5,6 +5,7 @@
 // el render real, para que lo previsualizado sea idéntico a lo exportado.
 
 import Image from 'next/image'
+import { useLayoutEffect, useRef, useState } from 'react'
 import {
   COLORES,
   TIPOGRAFIA,
@@ -18,27 +19,63 @@ import type { DocumentoData } from '@/lib/documentos/types'
 
 const T = TIPOGRAFIA.tamanos
 
+// Dimensiones de una hoja Carta (8.5 × 11") a 72 dpi, en puntos.
+const ANCHO_HOJA = 612
+const ALTO_HOJA = 792
+
 export default function DocumentoPreview({ data }: { data: DocumentoData }) {
   const conceptos = data.conceptos ?? []
   const total = data.total ?? calcularTotal(conceptos)
   const esVehiculo = data.tipo === 'vehiculo'
   const hoyISO = new Date().toISOString().slice(0, 10)
 
+  // La hoja se renderiza a su tamaño natural (612pt de ancho, con todos los
+  // tamaños en pt fieles al PDF) y se escala con transform para caber en el
+  // ancho disponible, conservando exactamente la proporción 8.5 × 11".
+  const contRef = useRef<HTMLDivElement>(null)
+  const hojaRef = useRef<HTMLDivElement>(null)
+  const [escala, setEscala] = useState(1)
+  const [altoWrap, setAltoWrap] = useState<number>(ALTO_HOJA)
+
+  useLayoutEffect(() => {
+    const cont = contRef.current
+    const hoja = hojaRef.current
+    if (!cont || !hoja) return
+    const recalcular = () => {
+      const s = Math.min(1, cont.clientWidth / ANCHO_HOJA)
+      setEscala(s)
+      // offsetHeight ignora el transform → altura natural de la hoja.
+      setAltoWrap(hoja.offsetHeight * s)
+    }
+    recalcular()
+    const ro = new ResizeObserver(recalcular)
+    ro.observe(cont)
+    ro.observe(hoja)
+    return () => ro.disconnect()
+  }, [])
+
   return (
-    <div
-      style={{
-        backgroundColor: COLORES.canvas,
-        color: COLORES.ink,
-        fontFamily: 'Helvetica, Arial, sans-serif',
-        fontSize: T.body,
-        padding: `${MEDIDAS.pagina.paddingTop}px ${MEDIDAS.pagina.paddingHorizontal}px ${MEDIDAS.pagina.paddingBottom}px`,
-        borderRadius: 8,
-        border: `1px solid ${COLORES.line}`,
-        boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-        maxWidth: 612, // ancho carta en pt
-        margin: '0 auto',
-      }}
-    >
+    <div ref={contRef} style={{ width: '100%', overflow: 'hidden' }}>
+      {/* Caja del tamaño escalado: reserva el alto real y centra la hoja. */}
+      <div style={{ width: ANCHO_HOJA * escala, height: altoWrap, margin: '0 auto' }}>
+        <div
+          ref={hojaRef}
+          style={{
+            width: ANCHO_HOJA,
+            minHeight: ALTO_HOJA,
+            transform: `scale(${escala})`,
+            transformOrigin: 'top left',
+            backgroundColor: COLORES.canvas,
+            color: COLORES.ink,
+            fontFamily: 'Helvetica, Arial, sans-serif',
+            fontSize: T.body,
+            padding: `${MEDIDAS.pagina.paddingTop}px ${MEDIDAS.pagina.paddingHorizontal}px ${MEDIDAS.pagina.paddingBottom}px`,
+            borderRadius: 8,
+            border: `1px solid ${COLORES.line}`,
+            boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+            boxSizing: 'border-box',
+          }}
+        >
       {/* Encabezado */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -272,6 +309,8 @@ export default function DocumentoPreview({ data }: { data: DocumentoData }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12 }}>
         <span style={{ fontSize: 7, color: COLORES.muted, letterSpacing: 0.3 }}>LogiCosto · v1</span>
         <span style={{ fontSize: 7, color: COLORES.muted, letterSpacing: 0.3 }}>Documento generado electrónicamente</span>
+      </div>
+        </div>
       </div>
     </div>
   )

@@ -446,8 +446,8 @@ export default function CapturaForm({
 
         {/* Datos por tipo */}
         {form.tipo === 'vehiculo' ? (
-          <fieldset className="grid grid-cols-2 gap-3">
-            <legend className="col-span-2 font-display text-sm font-semibold text-text-primary">Datos del vehículo</legend>
+          <fieldset className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <legend className="font-display text-sm font-semibold text-text-primary sm:col-span-2">Datos del vehículo</legend>
             <div>
               <label className={labelCls}>Marca</label>
               <input className={inputCls} disabled={bloqueado} value={form.vehiculo.marca} onChange={(e) => setVehiculo('marca', e.target.value)} />
@@ -468,7 +468,7 @@ export default function CapturaForm({
               <input className={inputCls} disabled={bloqueado} value={form.vehiculo.color} onChange={(e) => setVehiculo('color', e.target.value)} />
               <p className="mt-1 text-[11px] text-gray-400">No aparece en el PDF</p>
             </div>
-            <div className="col-span-2">
+            <div className="sm:col-span-2">
               <label className={labelCls}>Chasis</label>
               <input className={inputCls} disabled={bloqueado} value={form.vehiculo.chasis} onChange={(e) => setVehiculo('chasis', e.target.value)} />
               {err('vehiculo.chasis') && <p className="mt-1 text-xs text-red-600">{err('vehiculo.chasis')}</p>}
@@ -529,10 +529,10 @@ export default function CapturaForm({
                 ))}
               </div>
             )}
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <input
                 ref={refConcepto}
-                className={inputBase + ' flex-1 min-w-0'}
+                className={inputBase + ' w-full min-w-0 sm:flex-1'}
                 placeholder="Nombre del concepto"
                 value={nuevoConcepto}
                 onChange={(e) => { setNuevoConcepto(e.target.value); setErrorEntrada(null) }}
@@ -540,7 +540,7 @@ export default function CapturaForm({
               />
               <input
                 ref={refMonto}
-                className={inputBase + ' w-28'}
+                className={inputBase + ' min-w-0 flex-1 sm:w-28 sm:flex-none'}
                 inputMode="decimal"
                 placeholder="Monto"
                 value={nuevoMonto}
@@ -583,10 +583,10 @@ export default function CapturaForm({
                 >
                   {editIdx === i ? (
                     <div className="flex-1 space-y-2">
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
                         <input
                           autoFocus
-                          className={inputBase + ' flex-1 min-w-0'}
+                          className={inputBase + ' w-full min-w-0 sm:flex-1'}
                           placeholder="Nombre del concepto"
                           value={editConcepto}
                           onChange={(e) => { setEditConcepto(e.target.value); setErrorEdicion(null) }}
@@ -596,7 +596,7 @@ export default function CapturaForm({
                           }}
                         />
                         <input
-                          className={inputBase + ' w-28'}
+                          className={inputBase + ' min-w-0 flex-1 sm:w-28 sm:flex-none'}
                           inputMode="decimal"
                           placeholder="Monto"
                           value={editMonto}
@@ -686,7 +686,7 @@ export default function CapturaForm({
                 type="button"
                 onClick={handleGuardarBorrador}
                 disabled={pendingGuardar}
-                className="rounded-lg border border-border bg-surface-raised px-4 py-2 text-sm font-display font-semibold text-text-secondary transition hover:bg-surface-hover disabled:opacity-60"
+                className="w-full rounded-lg border border-border bg-surface-raised px-4 py-2 text-sm font-display font-semibold text-text-secondary transition hover:bg-surface-hover disabled:opacity-60 sm:w-auto"
               >
                 {pendingGuardar ? 'Guardando…' : 'Guardar borrador'}
               </button>
@@ -696,7 +696,7 @@ export default function CapturaForm({
                 type="button"
                 onClick={handleExportar}
                 disabled={guardando}
-                className="rounded-lg bg-action-primary px-4 py-2 text-sm font-display font-semibold text-white transition hover:bg-action-primary-hover disabled:opacity-60"
+                className="w-full rounded-lg bg-action-primary px-4 py-2 text-sm font-display font-semibold text-white transition hover:bg-action-primary-hover disabled:opacity-60 sm:w-auto"
               >
                 {pendingExportar ? 'Exportando…' : 'Exportar PDF'}
               </button>
