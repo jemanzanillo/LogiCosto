@@ -55,9 +55,9 @@ export default function TablaHistorial({ filas, total, page, pageSize, permisos 
   }
 
   return (
-    <div className="flex gap-0 min-h-0">
+    <div className="min-h-0">
       {/* Tabla */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex flex-col min-w-0">
         <div className="overflow-x-auto rounded-xl border border-border bg-surface-raised">
           <table className="w-full text-sm">
             <thead>

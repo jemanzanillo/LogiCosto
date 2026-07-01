@@ -64,7 +64,14 @@ export default function PanelDetalle({ doc, onCerrar, permisos }: Props) {
   }
 
   return (
-    <aside className="w-[380px] shrink-0 flex flex-col bg-white border-l border-border overflow-y-auto">
+    <>
+      {/* Backdrop */}
+      <div
+        onClick={onCerrar}
+        className="fixed inset-0 z-40 bg-black/20"
+        aria-hidden="true"
+      />
+      <aside className="fixed inset-y-0 right-0 z-50 w-[380px] max-w-[calc(100vw-2rem)] flex flex-col bg-white border-l border-border shadow-xl overflow-y-auto">
       {/* Header */}
       <div className="flex items-start justify-between px-5 py-4 border-b border-border">
         <div className="space-y-1.5 min-w-0">
@@ -294,6 +301,7 @@ export default function PanelDetalle({ doc, onCerrar, permisos }: Props) {
           </div>
         </div>
       )}
-    </aside>
+      </aside>
+    </>
   )
 }
