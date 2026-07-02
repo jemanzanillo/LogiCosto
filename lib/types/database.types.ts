@@ -434,6 +434,68 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          document_id: string | null
+          id: string
+          leida: boolean
+          org_id: string
+          recipient_id: string
+          tipo: Database["public"]["Enums"]["notification_tipo"]
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          document_id?: string | null
+          id?: string
+          leida?: boolean
+          org_id: string
+          recipient_id: string
+          tipo: Database["public"]["Enums"]["notification_tipo"]
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          document_id?: string | null
+          id?: string
+          leida?: boolean
+          org_id?: string
+          recipient_id?: string
+          tipo?: Database["public"]["Enums"]["notification_tipo"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -457,6 +519,12 @@ export type Database = {
       document_origen: "app" | "respaldo_offline" | "historico"
       document_status: "borrador" | "exportada" | "finalizada"
       document_tipo: "vehiculo" | "contenedor"
+      notification_tipo:
+        | "vencimiento_proximo"
+        | "documento_pendiente"
+        | "documento_aprobado"
+        | "documento_revertido"
+        | "version_nueva"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -600,6 +668,13 @@ export const Constants = {
       document_origen: ["app", "respaldo_offline", "historico"],
       document_status: ["borrador", "exportada", "finalizada"],
       document_tipo: ["vehiculo", "contenedor"],
+      notification_tipo: [
+        "vencimiento_proximo",
+        "documento_pendiente",
+        "documento_aprobado",
+        "documento_revertido",
+        "version_nueva",
+      ],
     },
   },
 } as const

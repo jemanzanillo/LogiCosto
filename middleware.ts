@@ -32,6 +32,12 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
+  // El cron de Vercel llama sin sesión de usuario (se autentica con
+  // CRON_SECRET dentro del propio route handler) — no debe redirigir a /login.
+  if (pathname.startsWith('/api/cron/')) {
+    return supabaseResponse
+  }
+
   if (!user && !pathname.startsWith('/login')) {
     return NextResponse.redirect(new URL('/login', request.url))
   }

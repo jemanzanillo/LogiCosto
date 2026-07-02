@@ -6,6 +6,7 @@ import { armarData, validar, type FormState, type ErroresValidacion } from '@/li
 import type { Json } from '@/lib/types/database.types'
 import { puede, type Accion } from '@/lib/auth/permisos'
 import type { NotaFila } from '@/lib/components/historial/types'
+import { notificarEquipo } from '@/lib/notificaciones/servicio'
 
 const MAX_NOTA = 2000
 
@@ -185,6 +186,12 @@ export async function exportar(id: string): Promise<ExportarResult> {
     action: 'exportar',
   })
 
+  try {
+    await notificarEquipo(supabase, profile.org_id, profile.id, 'documento_pendiente', id)
+  } catch (e) {
+    console.error('No se pudo notificar al equipo (documento_pendiente):', e)
+  }
+
   revalidatePath(`/documentos/${id}`)
   revalidatePath('/historial')
   return { ok: true }
@@ -258,6 +265,12 @@ export async function crearNuevaVersion(id: string, nota?: string): Promise<Guar
     detail: { version: nextVersion, nota: notaLimpia },
   })
 
+  try {
+    await notificarEquipo(supabase, profile.org_id, profile.id, 'version_nueva', id)
+  } catch (e) {
+    console.error('No se pudo notificar al equipo (version_nueva):', e)
+  }
+
   revalidatePath(`/documentos/${id}`)
   revalidatePath(`/documentos/${id}/versiones`)
   revalidatePath('/historial')
@@ -285,6 +298,12 @@ export async function marcarAprobada(id: string): Promise<ExportarResult> {
     actor_profile_id: profile.id,
     action: 'finalizar',
   })
+
+  try {
+    await notificarEquipo(supabase, profile.org_id, profile.id, 'documento_aprobado', id)
+  } catch (e) {
+    console.error('No se pudo notificar al equipo (documento_aprobado):', e)
+  }
 
   revalidatePath(`/documentos/${id}`)
   revalidatePath(`/documentos/${id}/versiones`)
@@ -314,6 +333,12 @@ export async function revertirPendiente(id: string): Promise<ExportarResult> {
     action: 'revisar',
     detail: { de: 'finalizada', a: 'exportada' },
   })
+
+  try {
+    await notificarEquipo(supabase, profile.org_id, profile.id, 'documento_revertido', id)
+  } catch (e) {
+    console.error('No se pudo notificar al equipo (documento_revertido):', e)
+  }
 
   revalidatePath(`/documentos/${id}`)
   revalidatePath(`/documentos/${id}/versiones`)
