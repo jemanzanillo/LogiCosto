@@ -67,6 +67,14 @@ export function resumenDetalle(fila: AuditoriaFila): string {
       return 'Aprobada → Pendiente'
     case 'eliminar':
       return typeof d.importador === 'string' ? d.importador : ''
+    case 'importar':
+      return typeof d.importador === 'string' ? d.importador : ''
+    case 'preset_crear':
+    case 'preset_editar': {
+      const nombre = typeof d.nombre === 'string' ? d.nombre : ''
+      const acc = d.accion === 'eliminar' ? ' (eliminado)' : ''
+      return `${nombre}${acc}`.trim()
+    }
     default:
       return ''
   }

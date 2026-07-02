@@ -114,13 +114,14 @@ export default async function HistorialPage({ searchParams }: { searchParams: Se
           >
             <Plus size={16} /> Agregar
           </Link>
-          <button
-            disabled
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-raised px-4 py-2 text-sm font-display font-medium text-text-tertiary cursor-not-allowed"
-            title="Próximamente"
-          >
-            <Upload size={16} /> Importar
-          </button>
+          {permisos.includes('documento.importar') && (
+            <Link
+              href="/historial/importar"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-raised px-4 py-2 text-sm font-display font-medium text-text-secondary transition-colors hover:bg-surface-hover"
+            >
+              <Upload size={16} /> Importar
+            </Link>
+          )}
         </div>
       </div>
 

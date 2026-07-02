@@ -33,7 +33,7 @@ const GRUPOS: { label: string; items: Item[] }[] = [
   {
     label: 'GESTIÓN',
     items: [
-      { href: '/importadores', label: 'Importadores', icon: Building2, proximamente: true },
+      { href: '/importadores', label: 'Importadores', icon: Building2 },
       { href: '/conceptos', label: 'Conceptos frecuentes', icon: ListChecks, proximamente: true },
       { href: '/respaldo', label: 'Respaldo', icon: FileSpreadsheet, proximamente: true },
       { href: '/auditoria', label: 'Auditoría', icon: ShieldCheck },

@@ -93,16 +93,16 @@ export const ACCIONES: AccionDef[] = [
   {
     key: 'documento.importar',
     label: 'Importar históricos',
-    descripcion: 'Cargar facturas desde Excel / respaldo offline.',
+    descripcion: 'Cargar facturas históricas desde Word.',
     grupo: 'Datos maestros',
-    disponible: false,
+    disponible: true,
   },
   {
     key: 'importador.gestionar',
     label: 'Gestionar importadores',
     descripcion: 'Crear y editar presets de importador.',
     grupo: 'Datos maestros',
-    disponible: false,
+    disponible: true,
   },
 ]
 

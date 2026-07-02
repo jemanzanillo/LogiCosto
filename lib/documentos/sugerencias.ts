@@ -15,19 +15,30 @@ export type Sugerencias = {
 // existentes (RLS limita a la org del usuario). El volumen es bajo (~15/día), así
 // que basta una sola consulta acotada sobre las versiones vigentes.
 export async function obtenerSugerencias(supabase: DB): Promise<Sugerencias> {
-  const { data: rows } = await supabase
-    .from('documents')
-    .select(
-      `importador_nombre, importador_rnc,
-       document_versions!fk_current_version (data)`,
-    )
-    .order('updated_at', { ascending: false })
-    .limit(200)
+  const [{ data: rows }, { data: presets }] = await Promise.all([
+    supabase
+      .from('documents')
+      .select(
+        `importador_nombre, importador_rnc,
+         document_versions!fk_current_version (data)`,
+      )
+      .order('updated_at', { ascending: false })
+      .limit(200),
+    // Presets del catálogo dedicado (tabla importadores): incluye los creados a
+    // mano que aún no tienen facturas, para que aparezcan en el autocompletado.
+    supabase.from('importadores').select('nombre, rnc').order('nombre', { ascending: true }),
+  ])
 
   // Importadores distintos (por nombre, sin distinguir mayúsculas).
   const impPorNombre = new Map<string, Importador>()
   // Frecuencia de cada concepto en el historial.
   const conteoConceptos = new Map<string, number>()
+
+  // Primero los presets del catálogo (fuente autoritativa del RNC).
+  for (const p of presets ?? []) {
+    const nombre = (p.nombre ?? '').trim()
+    if (nombre) impPorNombre.set(nombre.toLowerCase(), { nombre, rnc: (p.rnc ?? '').trim() })
+  }
 
   for (const r of rows ?? []) {
     const nombre = (r.importador_nombre ?? '').trim()

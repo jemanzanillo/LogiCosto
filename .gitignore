@@ -25,3 +25,4 @@ out/
 # TypeScript build cache
 tsconfig.tsbuildinfo
 *.tsbuildinfo
+docs/LogiCosto_Datos_Prueba_QA.xlsx
