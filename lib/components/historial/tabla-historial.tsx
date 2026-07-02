@@ -29,9 +29,10 @@ type Props = {
   page: number
   pageSize: number
   permisos: string[]
+  miPerfilId: string
 }
 
-export default function TablaHistorial({ filas, total, page, pageSize, permisos }: Props) {
+export default function TablaHistorial({ filas, total, page, pageSize, permisos, miPerfilId }: Props) {
   const [seleccionado, setSeleccionado] = useState<DocumentoFila | null>(null)
   const router = useRouter()
   const params = useSearchParams()
@@ -208,7 +209,7 @@ export default function TablaHistorial({ filas, total, page, pageSize, permisos 
 
       {/* Panel de detalle */}
       {seleccionado && (
-        <PanelDetalle doc={seleccionado} onCerrar={() => setSeleccionado(null)} permisos={permisos} />
+        <PanelDetalle doc={seleccionado} onCerrar={() => setSeleccionado(null)} permisos={permisos} miPerfilId={miPerfilId} />
       )}
     </div>
   )

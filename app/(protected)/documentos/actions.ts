@@ -5,6 +5,9 @@ import { createClient } from '@/lib/supabase/server'
 import { armarData, validar, type FormState, type ErroresValidacion } from '@/lib/documentos/types'
 import type { Json } from '@/lib/types/database.types'
 import { puede, type Accion } from '@/lib/auth/permisos'
+import type { NotaFila } from '@/lib/components/historial/types'
+
+const MAX_NOTA = 2000
 
 // Atajo de enforcement: resuelve el permiso del usuario actual y devuelve un
 // error uniforme si no lo tiene. El titular siempre pasa (ver resolverPermisos).
@@ -414,5 +417,114 @@ export async function eliminarDocumento(id: string): Promise<ExportarResult> {
   if (error) return { ok: false, error: error.message }
 
   revalidatePath('/historial')
+  return { ok: true }
+}
+
+// ---------------------------------------------------------------------------
+// Notas internas por documento (hilo colaborativo del panel de detalle).
+// Libres para todos los roles (sin enforcement de permiso): la transparencia
+// entre titular/suplente/operador es justamente el objetivo. RLS aísla por
+// organización; la propiedad de la nota se valida a nivel aplicación.
+// ---------------------------------------------------------------------------
+
+type NotasResult = { ok: true; notas: NotaFila[] } | { ok: false; error: string }
+type NotaMutResult = { ok: true } | { ok: false; error: string }
+
+// Lista las notas de un documento (más antiguas primero), con el nombre del autor.
+export async function listarNotas(documentId: string): Promise<NotasResult> {
+  const ctx = await getPerfil()
+  if (!ctx) return { ok: false, error: 'Sesión no válida.' }
+  const { supabase } = ctx
+
+  const { data, error } = await supabase
+    .from('document_notes')
+    .select('id, contenido, created_at, created_by, profiles!document_notes_created_by_fkey (full_name)')
+    .eq('document_id', documentId)
+    .order('created_at', { ascending: true })
+  if (error) return { ok: false, error: error.message }
+
+  const notas: NotaFila[] = (data ?? []).map((n) => {
+    const perfil = n.profiles as { full_name: string } | null
+    return {
+      id: n.id,
+      contenido: n.contenido,
+      created_at: n.created_at,
+      created_by: n.created_by,
+      autor_nombre: perfil?.full_name ?? '',
+    }
+  })
+  return { ok: true, notas }
+}
+
+// Agrega una nota al hilo del documento y la registra en auditoría.
+export async function crearNota(documentId: string, contenido: string): Promise<NotaMutResult> {
+  const ctx = await getPerfil()
+  if (!ctx) return { ok: false, error: 'Sesión no válida.' }
+  const { supabase, profile } = ctx
+
+  const limpio = contenido.trim()
+  if (!limpio) return { ok: false, error: 'Escribe una nota antes de agregarla.' }
+  if (limpio.length > MAX_NOTA) {
+    return { ok: false, error: `La nota no puede superar los ${MAX_NOTA} caracteres.` }
+  }
+
+  // Verifica que el documento exista dentro de la organización (RLS lo aísla).
+  const { data: doc, error: docErr } = await supabase
+    .from('documents')
+    .select('id')
+    .eq('id', documentId)
+    .single()
+  if (docErr || !doc) return { ok: false, error: docErr?.message ?? 'Documento no encontrado.' }
+
+  const { error } = await supabase.from('document_notes').insert({
+    org_id: profile.org_id,
+    document_id: documentId,
+    created_by: profile.id,
+    contenido: limpio,
+  })
+  if (error) return { ok: false, error: error.message }
+
+  await supabase.from('audit_log').insert({
+    org_id: profile.org_id,
+    document_id: documentId,
+    actor_profile_id: profile.id,
+    action: 'nota_crear',
+    detail: { extracto: limpio.slice(0, 80) },
+  })
+
+  revalidatePath('/historial')
+  revalidatePath(`/documentos/${documentId}`)
+  return { ok: true }
+}
+
+// Elimina una nota. Solo el autor puede borrar la suya (falla cerrado).
+export async function eliminarNota(notaId: string): Promise<NotaMutResult> {
+  const ctx = await getPerfil()
+  if (!ctx) return { ok: false, error: 'Sesión no válida.' }
+  const { supabase, profile } = ctx
+
+  const { data: nota, error: readErr } = await supabase
+    .from('document_notes')
+    .select('id, document_id, created_by, contenido')
+    .eq('id', notaId)
+    .single()
+  if (readErr || !nota) return { ok: false, error: readErr?.message ?? 'Nota no encontrada.' }
+  if (nota.created_by !== profile.id) {
+    return { ok: false, error: 'Solo puedes eliminar tus propias notas.' }
+  }
+
+  const { error } = await supabase.from('document_notes').delete().eq('id', notaId)
+  if (error) return { ok: false, error: error.message }
+
+  await supabase.from('audit_log').insert({
+    org_id: profile.org_id,
+    document_id: nota.document_id,
+    actor_profile_id: profile.id,
+    action: 'nota_eliminar',
+    detail: { extracto: nota.contenido.slice(0, 80) },
+  })
+
+  revalidatePath('/historial')
+  revalidatePath(`/documentos/${nota.document_id}`)
   return { ok: true }
 }

@@ -24,6 +24,8 @@ export const ACCION_LABEL: Record<AuditAction, string> = {
   eliminar: 'Eliminó',
   preset_crear: 'Creó preset',
   preset_editar: 'Editó preset',
+  nota_crear: 'Agregó nota',
+  nota_eliminar: 'Eliminó nota',
 }
 
 // Clase de badge por acción.
@@ -37,6 +39,8 @@ export const ACCION_CLASE: Record<AuditAction, string> = {
   eliminar: 'bg-red-50 text-red-600',
   preset_crear: 'bg-gray-100 text-gray-600',
   preset_editar: 'bg-gray-100 text-gray-600',
+  nota_crear: 'bg-indigo-50 text-indigo-700',
+  nota_eliminar: 'bg-red-50 text-red-600',
 }
 
 // Orden de opciones para el filtro de acción.
@@ -50,6 +54,8 @@ export const ACCIONES: AuditAction[] = [
   'importar',
   'preset_crear',
   'preset_editar',
+  'nota_crear',
+  'nota_eliminar',
 ]
 
 // Resumen legible del campo `detail` (jsonb) según la acción.
@@ -69,6 +75,9 @@ export function resumenDetalle(fila: AuditoriaFila): string {
       return typeof d.importador === 'string' ? d.importador : ''
     case 'importar':
       return typeof d.importador === 'string' ? d.importador : ''
+    case 'nota_crear':
+    case 'nota_eliminar':
+      return typeof d.extracto === 'string' ? d.extracto : ''
     case 'preset_crear':
     case 'preset_editar': {
       const nombre = typeof d.nombre === 'string' ? d.nombre : ''

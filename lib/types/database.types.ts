@@ -66,6 +66,55 @@ export type Database = {
           },
         ]
       }
+      document_notes: {
+        Row: {
+          contenido: string
+          created_at: string
+          created_by: string
+          document_id: string
+          id: string
+          org_id: string
+        }
+        Insert: {
+          contenido: string
+          created_at?: string
+          created_by: string
+          document_id: string
+          id?: string
+          org_id: string
+        }
+        Update: {
+          contenido?: string
+          created_at?: string
+          created_by?: string
+          document_id?: string
+          id?: string
+          org_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_notes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_notes_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_notes_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_versions: {
         Row: {
           created_at: string
@@ -324,6 +373,67 @@ export type Database = {
           },
         ]
       }
+      soporte_tickets: {
+        Row: {
+          asunto: string
+          categoria: string | null
+          created_at: string
+          created_by: string
+          estado: string
+          id: string
+          mensaje: string
+          org_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          asunto: string
+          categoria?: string | null
+          created_at?: string
+          created_by: string
+          estado?: string
+          id?: string
+          mensaje: string
+          org_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          asunto?: string
+          categoria?: string | null
+          created_at?: string
+          created_by?: string
+          estado?: string
+          id?: string
+          mensaje?: string
+          org_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "soporte_tickets_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "soporte_tickets_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "soporte_tickets_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -342,6 +452,8 @@ export type Database = {
         | "eliminar"
         | "preset_crear"
         | "preset_editar"
+        | "nota_crear"
+        | "nota_eliminar"
       document_origen: "app" | "respaldo_offline" | "historico"
       document_status: "borrador" | "exportada" | "finalizada"
       document_tipo: "vehiculo" | "contenedor"
@@ -482,6 +594,8 @@ export const Constants = {
         "eliminar",
         "preset_crear",
         "preset_editar",
+        "nota_crear",
+        "nota_eliminar",
       ],
       document_origen: ["app", "respaldo_offline", "historico"],
       document_status: ["borrador", "exportada", "finalizada"],

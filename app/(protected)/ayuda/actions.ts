@@ -1,5 +1,6 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import nodemailer from 'nodemailer'
 import { createClient } from '@/lib/supabase/server'
 import { CATEGORIA_LABEL } from '@/lib/components/ayuda/contenido'
@@ -62,7 +63,7 @@ export async function enviarSoporte(form: FormData): Promise<Result> {
   // cuando el producto tenga varias organizaciones dando soporte al mismo tiempo.
   const { data: perfil } = await supabase
     .from('profiles')
-    .select('organizations(name)')
+    .select('org_id, organizations(name)')
     .eq('id', user.id)
     .maybeSingle()
   const organizacion = perfil?.organizations?.name ?? '—'
@@ -105,5 +106,54 @@ export async function enviarSoporte(form: FormData): Promise<Result> {
     return { ok: false, error: `No se pudo enviar la solicitud: ${msg}` }
   }
 
+  // Registrar la solicitud enviada (bandeja "Mis solicitudes"). El correo ya
+  // salió: si el insert falla no rompemos la respuesta al usuario, solo lo
+  // dejamos en el log del servidor. El adjunto no se persiste (solo va al correo).
+  if (perfil?.org_id) {
+    const { error: ticketErr } = await supabase.from('soporte_tickets').insert({
+      org_id: perfil.org_id,
+      created_by: user.id,
+      categoria: categoria || null,
+      asunto,
+      mensaje,
+      estado: 'abierta',
+    })
+    if (ticketErr) {
+      console.error('No se pudo registrar el ticket de soporte:', ticketErr.message)
+    }
+  }
+
+  revalidatePath('/ayuda')
+  return { ok: true }
+}
+
+// Cambia el estado de una solicitud (Abierta/Resuelta). Frontera fija: solo el
+// titular puede hacerlo (no delegable, igual criterio que la gestión de equipo).
+export async function actualizarEstadoTicket(
+  ticketId: string,
+  estado: 'abierta' | 'resuelta',
+): Promise<Result> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'Su sesión expiró. Vuelva a iniciar sesión.' }
+
+  const { data: perfil } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle()
+  if (perfil?.role !== 'titular') {
+    return { ok: false, error: 'Solo el titular puede cambiar el estado de las solicitudes.' }
+  }
+
+  const { error } = await supabase
+    .from('soporte_tickets')
+    .update({ estado, updated_at: new Date().toISOString(), updated_by: user.id })
+    .eq('id', ticketId)
+  if (error) return { ok: false, error: error.message }
+
+  revalidatePath('/ayuda')
   return { ok: true }
 }

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { X } from 'lucide-react'
 import { formatoMoneda } from '@/lib/pdf/formato'
 import { duplicarDocumento, eliminarDocumento } from '@/app/(protected)/documentos/actions'
+import NotasSection from './notas-section'
 import {
   estadoUI,
   ESTADO_LABEL,
@@ -27,9 +28,10 @@ type Props = {
   doc: DocumentoFila
   onCerrar: () => void
   permisos: string[]
+  miPerfilId: string
 }
 
-export default function PanelDetalle({ doc, onCerrar, permisos }: Props) {
+export default function PanelDetalle({ doc, onCerrar, permisos, miPerfilId }: Props) {
   const tiene = (a: string) => permisos.includes(a)
   const estado = estadoUI(doc)
   const router = useRouter()
@@ -225,6 +227,11 @@ export default function PanelDetalle({ doc, onCerrar, permisos }: Props) {
           <span className="text-xl font-bold text-text-primary">
             {formatoMoneda(doc.data.total)}
           </span>
+        </div>
+
+        {/* Notas internas */}
+        <div className="border-t border-border pt-4">
+          <NotasSection documentId={doc.id} miPerfilId={miPerfilId} />
         </div>
       </div>
 

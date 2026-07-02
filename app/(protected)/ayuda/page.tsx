@@ -3,6 +3,8 @@ import { ArrowRight, LifeBuoy } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import Faq from '@/lib/components/ayuda/faq'
 import ContactoForm from '@/lib/components/ayuda/contacto-form'
+import AyudaTabs from '@/lib/components/ayuda/ayuda-tabs'
+import MisSolicitudes, { type TicketFila } from '@/lib/components/ayuda/mis-solicitudes'
 import { PRIMEROS_PASOS } from '@/lib/components/ayuda/contenido'
 
 export default async function AyudaPage() {
@@ -13,26 +15,35 @@ export default async function AyudaPage() {
 
   const { data: perfil } = await supabase
     .from('profiles')
-    .select('full_name')
+    .select('full_name, role')
     .eq('id', user?.id ?? '')
     .maybeSingle()
 
-  return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-10">
-      {/* Encabezado */}
-      <div className="flex items-start gap-3">
-        <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-electrico-50 text-action-primary">
-          <LifeBuoy size={22} />
-        </div>
-        <div>
-          <h1 className="text-xl font-semibold text-text-primary">Centro de ayuda</h1>
-          <p className="mt-1 text-sm text-text-secondary">
-            Guías para empezar, respuestas a las dudas más frecuentes y un canal directo con
-            soporte.
-          </p>
-        </div>
-      </div>
+  const esTitular = perfil?.role === 'titular'
 
+  // Bandeja "Mis solicitudes": el titular ve todas las de la organización;
+  // el resto solo las propias. RLS ya aísla por organización.
+  let ticketQuery = supabase
+    .from('soporte_tickets')
+    .select('id, categoria, asunto, estado, created_at, profiles!soporte_tickets_created_by_fkey (full_name)')
+    .order('created_at', { ascending: false })
+  if (!esTitular && user) ticketQuery = ticketQuery.eq('created_by', user.id)
+  const { data: ticketRows } = await ticketQuery
+
+  const tickets: TicketFila[] = (ticketRows ?? []).map((t) => {
+    const autor = t.profiles as { full_name: string } | null
+    return {
+      id: t.id,
+      categoria: t.categoria,
+      asunto: t.asunto,
+      estado: t.estado,
+      created_at: t.created_at,
+      autor_nombre: autor?.full_name ?? '',
+    }
+  })
+
+  const centro = (
+    <div className="flex flex-col gap-10">
       {/* Primeros pasos */}
       <section>
         <h2 className="mb-4 text-base font-semibold text-text-primary">Primeros pasos</h2>
@@ -84,6 +95,30 @@ export default async function AyudaPage() {
           correoInicial={user?.email ?? ''}
         />
       </section>
+    </div>
+  )
+
+  return (
+    <div className="mx-auto flex max-w-4xl flex-col gap-8">
+      {/* Encabezado */}
+      <div className="flex items-start gap-3">
+        <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-electrico-50 text-action-primary">
+          <LifeBuoy size={22} />
+        </div>
+        <div>
+          <h1 className="text-xl font-semibold text-text-primary">Centro de ayuda</h1>
+          <p className="mt-1 text-sm text-text-secondary">
+            Guías para empezar, respuestas a las dudas más frecuentes y un canal directo con
+            soporte.
+          </p>
+        </div>
+      </div>
+
+      <AyudaTabs
+        centro={centro}
+        solicitudes={<MisSolicitudes tickets={tickets} esTitular={esTitular} />}
+        totalSolicitudes={tickets.length}
+      />
     </div>
   )
 }

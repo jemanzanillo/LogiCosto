@@ -17,6 +17,15 @@ export type DocumentoFila = {
   created_by_name: string
 }
 
+// Nota interna de un documento (hilo colaborativo en el panel de detalle).
+export type NotaFila = {
+  id: string
+  contenido: string
+  created_at: string
+  created_by: string
+  autor_nombre: string
+}
+
 export function estadoUI(d: Pick<DocumentoFila, 'status' | 'vencimiento_parqueo'>): EstadoUI {
   const hoy = new Date().toISOString().slice(0, 10)
   if (d.vencimiento_parqueo && d.vencimiento_parqueo < hoy) return 'vencida'

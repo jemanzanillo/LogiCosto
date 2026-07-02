@@ -141,6 +141,7 @@ export default async function HistorialPage({ searchParams }: { searchParams: Se
           page={page}
           pageSize={PAGE_SIZE}
           permisos={permisos}
+          miPerfilId={user?.id ?? ''}
         />
       </Suspense>
     </div>
